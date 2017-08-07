@@ -4,6 +4,8 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
+import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.GenericFutureListener;
 
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -16,24 +18,26 @@ public class ClientIdleHandler extends ChannelInboundHandlerAdapter {
 
 
     private ScheduledFuture<?> future;
-    private ScheduledExecutorService connectThread;
 
     private static final Packet PING_PACKET;
 
-    private static final String PING_TYPE="ping";
+    private static final long PEROID=5000;
+
+
     static {
         PING_PACKET=new Packet();
-        PING_PACKET.setType(PING_TYPE);
+        PING_PACKET.setType(CommonConstant.IDLE_PING);
     }
 
-    public ClientIdleHandler(ScheduledExecutorService connectThread){
-        this.connectThread=connectThread;
+    public ClientIdleHandler(){
     }
 
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        future=ctx.executor().scheduleWithFixedDelay(() -> ctx.writeAndFlush(PING_PACKET),5,5, TimeUnit.SECONDS);
+        future=ctx.executor().scheduleWithFixedDelay(() -> {
+            ctx.writeAndFlush(PING_PACKET);
+        },PEROID,PEROID, TimeUnit.MILLISECONDS);
         super.channelActive(ctx);
     }
 

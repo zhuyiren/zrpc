@@ -3,6 +3,7 @@ package com.zhuyiren.rpc.handler;
 import com.zhuyiren.rpc.Server;
 import com.zhuyiren.rpc.common.PacketDecoder;
 import com.zhuyiren.rpc.common.PacketEncoder;
+import com.zhuyiren.rpc.common.ServerIdleHandler;
 import com.zhuyiren.rpc.engine.NormalEngine;
 import com.zhuyiren.rpc.engine.ProtostuffEngine;
 import io.netty.channel.ChannelInitializer;
@@ -11,6 +12,9 @@ import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;
 import io.netty.handler.codec.compression.ZlibCodecFactory;
 import io.netty.handler.codec.compression.ZlibWrapper;
+import io.netty.handler.timeout.IdleStateHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,6 +25,8 @@ import java.util.Map;
  */
 public class ServerHandlerInitializer extends ChannelInitializer<SocketChannel> {
 
+    private static final Logger LOGGER= LoggerFactory.getLogger(ServerHandlerInitializer.class);
+
     private Server server;
     private StatisticsHandler statisticsHandler;
     private RequestHandlerAdapter handlerAdapter;
@@ -29,7 +35,7 @@ public class ServerHandlerInitializer extends ChannelInitializer<SocketChannel> 
 
     static {
         useZip = Boolean.parseBoolean(System.getProperty("useZip", "false"));
-        System.out.println("useZip:" + useZip);
+        LOGGER.debug("Use zip:" + useZip);
     }
 
 
@@ -47,20 +53,25 @@ public class ServerHandlerInitializer extends ChannelInitializer<SocketChannel> 
             requestDispatch.registerService(entry.getKey(), entry.getValue());
         }
 
-        ch.pipeline().addLast(new LengthFieldBasedFrameDecoder(204800000, 0, 4, 0, 4));
+        ch.pipeline().addLast(new IdleStateHandler(10,0,0));
+
         if (useZip) {
             ch.pipeline().addLast(ZlibCodecFactory.newZlibDecoder(ZlibWrapper.GZIP));
         }
+        ch.pipeline().addLast(new LengthFieldBasedFrameDecoder(204800000, 0, 4, 0, 4));
+
         ch.pipeline().addLast(new PacketDecoder());
 
 
-        ch.pipeline().addLast(new LengthFieldPrepender(4));
         if (useZip) {
             ch.pipeline().addLast(ZlibCodecFactory.newZlibEncoder(ZlibWrapper.GZIP));
         }
+        ch.pipeline().addLast(new LengthFieldPrepender(4));
+
         ch.pipeline()
                 .addLast(new PacketEncoder())
                 .addLast(statisticsHandler)
+                .addLast(new ServerIdleHandler())
                 .addLast(server.getBussinessExecutors(), requestDispatch);
     }
 
