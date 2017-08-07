@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns="http://www.zhuyiren.com/schema/zrpc"
+            xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+            xmlns:beans="http://www.springframework.org/schema/beans"
+            targetNamespace="http://www.zhuyiren.com/schema/zrpc"
+            elementFormDefault="qualified" attributeFormDefault="unqualified">
+
+    <xsd:import namespace="http://www.springframework.org/schema/beans"
+                schemaLocation="http://www.springframework.org/schema/beans/spring-beans-4.3.xsd"/>
+    <xsd:import namespace="http://www.springframework.org/schema/tool"
+                schemaLocation="http://www.springframework.org/schema/tool/spring-tool-4.3.xsd"/>
+
+
+    <xsd:element name="client">
+        <xsd:complexType>
+            <xsd:complexContent>
+                <xsd:extension base="beans:identifiedType">
+                    <xsd:group ref="clientElements"/>
+                    <xsd:attributeGroup ref="clientAttributes"/>
+                </xsd:extension>
+            </xsd:complexContent>
+        </xsd:complexType>
+    </xsd:element>
+    
+    <xsd:element name="service">
+        <xsd:complexType>
+            <xsd:complexContent>
+                <xsd:extension base="beans:identifiedType">
+                    <xsd:group ref="serviceElements"/>
+                    <xsd:attributeGroup ref="serviceAttributes"/>
+                </xsd:extension>
+            </xsd:complexContent>
+        </xsd:complexType>
+    </xsd:element>
+    
+    <xsd:element name="server">
+        <xsd:complexType>
+            <xsd:complexContent>
+
+            </xsd:complexContent>
+        </xsd:complexType>
+    </xsd:element>
+
+
+    <xsd:group name="clientElements">
+        <xsd:sequence>
+            <xsd:element ref="beans:description" minOccurs="0"/>
+            <xsd:choice minOccurs="0" maxOccurs="unbounded">
+                <xsd:element name="engines" type="beans:listOrSetType" minOccurs="0" maxOccurs="1"/>
+            </xsd:choice>
+
+        </xsd:sequence>
+    </xsd:group>
+
+    <xsd:attributeGroup name="clientAttributes">
+        <xsd:attribute name="workerThreadCount">
+            <xsd:simpleType>
+                <xsd:restriction base="xsd:int">
+                    <xsd:minInclusive value="0"/>
+                </xsd:restriction>
+            </xsd:simpleType>
+        </xsd:attribute>
+        <xsd:anyAttribute namespace="##other" processContents="lax"/>
+    </xsd:attributeGroup>
+
+
+    <xsd:attributeGroup name="serviceAttributes">
+        <xsd:attribute name="interface" type="xsd:string" use="required"/>
+        <xsd:attribute name="host" type="xsd:string" use="required"/>
+        <xsd:attribute name="engineType" type="xsd:string"/>
+        <xsd:attribute name="cached" type="xsd:boolean" default="false"/>
+        <xsd:attribute name="serviceName" type="xsd:string"/>
+        <xsd:attribute name="port" default="3324">
+            <xsd:simpleType>
+                <xsd:restriction base="xsd:int">
+                    <xsd:minExclusive value="0"/>
+                    <xsd:maxInclusive value="65535"/>
+                </xsd:restriction>
+            </xsd:simpleType>
+        </xsd:attribute>
+        <xsd:anyAttribute namespace="##other" processContents="lax"/>
+    </xsd:attributeGroup>
+
+    <xsd:group name="serviceElements">
+        <xsd:sequence>
+            <xsd:element ref="beans:description" minOccurs="0"/>
+            <xsd:choice minOccurs="0" maxOccurs="unbounded">
+                <xsd:element ref="beans:property"/>
+            </xsd:choice>
+        </xsd:sequence>
+    </xsd:group>
+
+</xsd:schema>
