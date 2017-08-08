@@ -19,6 +19,9 @@ package com.zhuyiren.rpc;
 import com.zhuyiren.rpc.engine.Engine;
 import io.netty.util.concurrent.EventExecutorGroup;
 
+import java.net.Socket;
+import java.net.SocketAddress;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -26,10 +29,20 @@ import java.util.Map;
  */
 public interface Server {
 
-    void register(String serviceName, Object handler);
-    void start(int port);
-    void shutdown();
-    Map<String,Object> getServices();
+    boolean register(String serviceName, Object handler,String host,int port);
+
+    boolean register(String serviceName,Object handler,int port);
+
+    boolean register(String serviceName,Object handler);
+
+    boolean start(SocketAddress address) throws IllegalArgumentException;
+
+    boolean start();
+
+    boolean shutdown();
+
+    Map<String,Object> getServices(SocketAddress address);
+
     EventExecutorGroup getBussinessExecutors();
-    void registerEngine(Engine engine);
+
 }

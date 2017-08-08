@@ -43,7 +43,7 @@ public class ZRpcClientFactoryBean implements FactoryBean<Client> {
             engines=defaultEngines();
         }
         for (Engine engine : engines) {
-            client.registerEngine(engine);
+            client.addEngine(engine);
         }
         this.client=client;
         return client;

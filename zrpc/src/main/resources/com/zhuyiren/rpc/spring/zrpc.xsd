@@ -36,7 +36,10 @@
     <xsd:element name="server">
         <xsd:complexType>
             <xsd:complexContent>
-
+                <xsd:extension base="beans:identifiedType">
+                    <xsd:group ref="serverGroup"/>
+                    <xsd:attributeGroup ref="serverAttributes"/>
+                </xsd:extension>
             </xsd:complexContent>
         </xsd:complexType>
     </xsd:element>
@@ -86,6 +89,39 @@
             <xsd:element ref="beans:description" minOccurs="0"/>
             <xsd:choice minOccurs="0" maxOccurs="unbounded">
                 <xsd:element ref="beans:property"/>
+            </xsd:choice>
+        </xsd:sequence>
+    </xsd:group>
+
+
+
+    <xsd:attributeGroup name="serverAttributes">
+        <xsd:attribute name="port" default="3324">
+            <xsd:simpleType>
+                <xsd:restriction base="xsd:int">
+                    <xsd:minExclusive value="0"/>
+                    <xsd:maxInclusive value="65535"/>
+                </xsd:restriction>
+            </xsd:simpleType>
+        </xsd:attribute>
+    </xsd:attributeGroup>
+
+    
+    <xsd:element name="provider">
+        <xsd:complexType>
+            <xsd:complexContent>
+                <xsd:extension base="beans:identifiedType"/>
+
+            </xsd:complexContent>
+        </xsd:complexType>
+    </xsd:element>
+
+
+    <xsd:group name="serverGroup">
+        <xsd:sequence>
+            <xsd:element ref="beans:description" minOccurs="0"/>
+            <xsd:choice minOccurs="0" maxOccurs="unbounded">
+                <xsd:element name="listener" type="beans:listOrSetType"/>
             </xsd:choice>
         </xsd:sequence>
     </xsd:group>

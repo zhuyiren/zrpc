@@ -30,8 +30,8 @@ import java.util.Map;
 public class DefaultRequestDispatch extends ChannelInboundHandlerAdapter implements RequestDispatcher {
 
 
-    RequestHandlerAdapter handlerAdapter;
-    Map<String,Object> serviceHandlers=new HashMap<>();
+    private RequestHandlerAdapter handlerAdapter;
+    private Map<String,Object> serviceHandlers=new HashMap<>();
 
     public DefaultRequestDispatch(RequestHandlerAdapter handlerAdapter){
         this.handlerAdapter=handlerAdapter;

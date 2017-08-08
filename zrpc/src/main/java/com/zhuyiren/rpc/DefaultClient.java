@@ -73,7 +73,7 @@ public class DefaultClient implements Client {
     public synchronized <T> T exportService(Class<? extends Engine> engineType, Class<T> service,String serviceName, SocketAddress address, boolean useCache) throws Exception {
         Engine engine = findEngineByType(engineType);
         if (engine == null) {
-            throw new IllegalArgumentException("illegal engine");
+            engine=addEngineByClass(engineType);
         }
         Invoker invoker = new DefaultInvoker(serviceName);
         invoker.setEngine(engine);
@@ -95,12 +95,6 @@ public class DefaultClient implements Client {
         return (T) o;
     }
 
-    @Override
-    public void registerEngine(Engine engine) {
-        if (!engines.contains(engine)) {
-            engines.add(engine);
-        }
-    }
 
     private Engine findEngineByType(Class<? extends Engine> engineType) {
         for (Engine engine : engines) {
@@ -118,5 +112,20 @@ public class DefaultClient implements Client {
         }
         eventExecutors.shutdownGracefully();
         connectThread.shutdownNow();
+    }
+
+    @Override
+    public Engine addEngineByClass(Class<? extends Engine> engineClass) throws Exception{
+        Engine engine=engineClass.newInstance();
+        return addEngine(engine);
+
+    }
+
+    @Override
+    public Engine addEngine(Engine engine) {
+        if(!engines.contains(engine)){
+            engines.add(engine);
+        }
+        return engine;
     }
 }

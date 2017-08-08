@@ -16,6 +16,7 @@
 
 package com.zhuyiren.rpc.handler;
 
+import com.zhuyiren.rpc.ProviderInformation;
 import com.zhuyiren.rpc.Server;
 import com.zhuyiren.rpc.common.PacketDecoder;
 import com.zhuyiren.rpc.common.PacketEncoder;
@@ -32,7 +33,7 @@ import io.netty.handler.timeout.IdleStateHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
+import java.net.SocketAddress;
 import java.util.List;
 import java.util.Map;
 
@@ -41,7 +42,7 @@ import java.util.Map;
  */
 public class ServerHandlerInitializer extends ChannelInitializer<SocketChannel> {
 
-    private static final Logger LOGGER= LoggerFactory.getLogger(ServerHandlerInitializer.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ServerHandlerInitializer.class);
 
     private Server server;
     private StatisticsHandler statisticsHandler;
@@ -64,12 +65,12 @@ public class ServerHandlerInitializer extends ChannelInitializer<SocketChannel> 
     @Override
 
     protected void initChannel(SocketChannel ch) throws Exception {
-        DefaultRequestDispatch requestDispatch = new DefaultRequestDispatch(handlerAdapter);
-        for (Map.Entry<String, Object> entry : server.getServices().entrySet()) {
-            requestDispatch.registerService(entry.getKey(), entry.getValue());
-        }
 
-        ch.pipeline().addLast(new IdleStateHandler(10,0,0));
+
+        DefaultRequestDispatch dispatcher = initRequestDispatcher(ch.localAddress());
+
+
+        ch.pipeline().addLast(new IdleStateHandler(10, 0, 0));
 
         if (useZip) {
             ch.pipeline().addLast(ZlibCodecFactory.newZlibDecoder(ZlibWrapper.GZIP));
@@ -88,16 +89,26 @@ public class ServerHandlerInitializer extends ChannelInitializer<SocketChannel> 
                 .addLast(new PacketEncoder())
                 .addLast(statisticsHandler)
                 .addLast(new ServerIdleHandler())
-                .addLast(server.getBussinessExecutors(), requestDispatch);
+                .addLast(server.getBussinessExecutors(), dispatcher);
     }
 
 
-    public void initHandlers(){
-        RequestHandlerAdapter compositeHandler=new RequestHandlerAdapterComposite();
+    public void initHandlers() {
+        RequestHandlerAdapter compositeHandler = new RequestHandlerAdapterComposite();
         CommonRequestHandlerAdapter commonHandler = new CommonRequestHandlerAdapter();
         commonHandler.addEngine(new NormalEngine());
         commonHandler.addEngine(new ProtostuffEngine());
         compositeHandler.addHandlerAdapter(commonHandler);
-        this.handlerAdapter=compositeHandler;
+        this.handlerAdapter = compositeHandler;
+    }
+
+    private DefaultRequestDispatch initRequestDispatcher(SocketAddress address) {
+        DefaultRequestDispatch requestDispatch = new DefaultRequestDispatch(handlerAdapter);
+        Map<String, Object> services = server.getServices(address);
+        for (Map.Entry<String, Object> entry : services.entrySet()) {
+            requestDispatch.registerService(entry.getKey(), entry.getValue());
+
+        }
+        return requestDispatch;
     }
 }

@@ -17,47 +17,44 @@
 package com.zhuyiren.rpc;
 
 
-import com.zhuyiren.rpc.engine.Engine;
 import com.zhuyiren.rpc.handler.*;
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.buffer.ByteBufAllocator;
-import io.netty.channel.ChannelInitializer;
+import io.netty.channel.AddressedEnvelope;
 import io.netty.channel.ChannelOption;
-import io.netty.channel.EventLoopGroup;
-import io.netty.channel.RecvByteBufAllocator;
 import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
-import io.netty.handler.codec.LengthFieldPrepender;
 import io.netty.util.concurrent.DefaultEventExecutorGroup;
-import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.EventExecutorGroup;
-import io.netty.util.internal.SystemPropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sun.nio.ch.Net;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.nio.channels.ServerSocketChannel;
+import java.util.*;
 
 /**
  * Created by zhuyiren on 2017/5/18.
  */
 public class DefaultServer implements Server {
 
-    private Map<String, Object> services = new HashMap<>();
+    private List<ProviderInformation> services = new ArrayList<>();
     private NioEventLoopGroup worker;
     private EventExecutorGroup bussiness;
     private ServerBootstrap serverBootstrap;
-    private ServerHandlerInitializer pipeHandler;
+    private ServerHandlerInitializer initializerHandler;
 
     private static final int DEFAULT_EVENT_LOOP_THREADS;
+    private static final String DEFAULT_HOST="0.0.0.0";
+    private static final int DEFAULT_PORT=3324;
 
     private static final Logger LOGGER= LoggerFactory.getLogger(DefaultServer.class);
 
     static {
         DEFAULT_EVENT_LOOP_THREADS = Runtime.getRuntime().availableProcessors() * 2;
     }
+
 
     public DefaultServer(){
         this(0);
@@ -68,7 +65,7 @@ public class DefaultServer implements Server {
         LOGGER.debug("Io thread size:"+size+",bussiness threas size:"+size);
         worker=new NioEventLoopGroup(size);
         bussiness=new DefaultEventExecutorGroup(size);
-        pipeHandler=new ServerHandlerInitializer(this);
+        initializerHandler =new ServerHandlerInitializer(this);
         initServerBootstrap();
     }
 
@@ -77,36 +74,77 @@ public class DefaultServer implements Server {
         serverBootstrap.group(worker, worker)
                 .channel(NioServerSocketChannel.class)
                 .option(ChannelOption.SO_BACKLOG, 1024)
-                .childHandler(pipeHandler);
-
+                .childHandler(initializerHandler);
     }
 
     @Override
-    public void register(String serviceName, Object handler) {
-        services.put(serviceName, handler);
+    public boolean register(String serviceName, Object handler,String host,int port) {
+        InetSocketAddress address=new InetSocketAddress(host,port);
+        ProviderInformation provider = findProvider(address);
+        if(provider==null){
+            provider=new ProviderInformation(address);
+            services.add(provider);
+        }
+
+        return provider.addService(serviceName,handler);
+    }
+
+
+    @Override
+    public boolean register(String serviceName, Object handler, int port) {
+        return register(serviceName,handler,DEFAULT_HOST,port);
     }
 
     @Override
-    public void start(final int port) {
+    public boolean register(String serviceName, Object handler) {
+        return register(serviceName,handler,DEFAULT_HOST,DEFAULT_PORT);
+    }
+
+    @Override
+    public boolean start(SocketAddress address) throws IllegalArgumentException {
+        if (!(address instanceof InetSocketAddress)) {
+            throw new IllegalArgumentException("监听地址无效");
+        }
+
+        ProviderInformation provider = findProvider(address);
+        if(provider==null || provider.isStart()){
+            return false;
+        }
+
         try {
-            serverBootstrap.bind(port).sync();
+            serverBootstrap.bind(address).sync();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
-        LOGGER.debug("Start server on port:"+port);
+        if(LOGGER.isDebugEnabled()) {
+            LOGGER.debug("启动服务：");
+            LOGGER.debug(provider.toString());
+        }
+        provider.setStart(true);
+        return true;
     }
 
     @Override
-    public void shutdown() {
+    public boolean shutdown() {
 
         worker.shutdownGracefully();
         bussiness.shutdownGracefully();
         LOGGER.debug("Shutdown server");
+        return true;
     }
 
     @Override
-    public Map<String, Object> getServices() {
-        return services;
+    public boolean start() {
+        for (ProviderInformation provider : services) {
+            start(provider.getAddress());
+        }
+        return true;
+    }
+
+    @Override
+    public Map<String,Object> getServices(SocketAddress address) {
+        ProviderInformation provider = findProvider(address);
+        return provider.getServies();
     }
 
     @Override
@@ -115,8 +153,15 @@ public class DefaultServer implements Server {
     }
 
 
-    @Override
-    public void registerEngine(Engine engine) {
 
+
+    private ProviderInformation findProvider(SocketAddress address){
+        for (ProviderInformation provider : services) {
+            if(provider.getAddress().equals(address)){
+                return provider;
+            }
+        }
+        return null;
     }
+
 }

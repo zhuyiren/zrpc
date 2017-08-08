@@ -23,6 +23,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 
 /**
+ * RPC客户端，用于
  * Created by zhuyiren on 2017/6/3.
  */
 public interface Client {
@@ -32,7 +33,10 @@ public interface Client {
 
     <T> T exportService(Class<? extends Engine> engineType, Class<T> service,String serviceName, SocketAddress address, boolean useCache) throws Exception;
 
-    void registerEngine(Engine engine);
+
+    Engine addEngineByClass(Class<? extends Engine> engineClass) throws Exception;
+
+    Engine addEngine(Engine engine);
 
     void shutdown();
 }
