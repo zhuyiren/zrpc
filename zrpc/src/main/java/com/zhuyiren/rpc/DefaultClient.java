@@ -42,35 +42,38 @@ public class DefaultClient implements Client {
     private static final Logger LOGGER= LoggerFactory.getLogger(DefaultClient.class);
 
 
-    List<Engine> engines;
-    Map<SocketAddress, CallHandler> callerMap;
-    List<CallHandler> callHandlers;
-    NioEventLoopGroup eventExecutors;
-    ScheduledExecutorService connectThread;
+    private List<Engine> engines;
+    private Map<SocketAddress, CallHandler> callerMap;
+    private List<CallHandler> callHandlers;
+    private NioEventLoopGroup eventExecutors;
+    private ScheduledExecutorService connectThread;
+    private boolean useZip;
 
 
-    public DefaultClient() {
-        this(0);
-    }
 
     public DefaultClient(int threadSize) {
+        this(threadSize,false);
+    }
+
+    public DefaultClient(int threadSize,boolean useZip) {
         engines = new ArrayList<>();
         callerMap = new HashMap<>();
         callHandlers = new ArrayList<>();
         eventExecutors = threadSize == 0 ? new NioEventLoopGroup() : new NioEventLoopGroup(threadSize);
         LOGGER.debug("io thread size:" + eventExecutors.executorCount());
         connectThread = Executors.newScheduledThreadPool(1);
+        this.useZip=useZip;
     }
 
 
     @Override
-    public <T> T exportService(Class<? extends Engine> engineType, Class<T> service, SocketAddress address, boolean useCache) throws Exception {
+    public <T> T exportService(Class<? extends Engine> engineType, Class<T> service, SocketAddress address, boolean useCache ) throws Exception {
         return exportService(engineType,service,service.getCanonicalName(),address,useCache);
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public synchronized <T> T exportService(Class<? extends Engine> engineType, Class<T> service,String serviceName, SocketAddress address, boolean useCache) throws Exception {
+    public synchronized <T> T exportService(Class<? extends Engine> engineType, Class<T> service,String serviceName, SocketAddress address, boolean useCache ) throws Exception {
         Engine engine = findEngineByType(engineType);
         if (engine == null) {
             engine=addEngineByClass(engineType);
@@ -83,7 +86,7 @@ public class DefaultClient implements Client {
             callHandler = callerMap.get(address);
         }
         if (callHandler == null) {
-            callHandler = new DefaultCallHandler(eventExecutors, connectThread, address);
+            callHandler = new DefaultCallHandler(eventExecutors, connectThread, address,useZip);
             callHandler.connect();
             callerMap.putIfAbsent(address, callHandler);
             callHandlers.add(callHandler);

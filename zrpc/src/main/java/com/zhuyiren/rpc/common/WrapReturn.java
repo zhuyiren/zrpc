@@ -16,10 +16,14 @@
 
 package com.zhuyiren.rpc.common;
 
+import java.io.Serializable;
+
 /**
  * Created by zhuyiren on 2017/8/1.
  */
-public class WrapReturn {
+public class WrapReturn implements Serializable{
+
+    private static final long serialVersionUID=1L;
 
 
     private Object result;

@@ -17,8 +17,6 @@
 package com.zhuyiren.rpc.handler;
 
 import io.netty.channel.*;
-import io.netty.util.concurrent.Future;
-import io.netty.util.concurrent.GenericFutureListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,19 +53,15 @@ public class StatisticsHandler extends ChannelOutboundHandlerAdapter implements 
     public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
         ctx.fireChannelRegistered();
 
-        synchronized (isStart) {
-            if (isStart.get() == false) {
-                ctx.executor().scheduleWithFixedDelay(() -> {
-                    long currentCount = count.get();
-                    long currentTime = System.currentTimeMillis();
-                    LOGGER.info("Statistics:" + (currentCount - preCount) * 1000 / (currentTime - preTime) + "   Clients:" + channels.get() + "   sum:" + currentCount);
-                    preCount = currentCount;
-                    preTime = currentTime;
-                }, 1, 1, TimeUnit.SECONDS);
-                isStart.set(true);
-            }
+        if (isStart.compareAndSet(false,true)) {
+            ctx.executor().scheduleWithFixedDelay(() -> {
+                long currentCount = count.get();
+                long currentTime = System.currentTimeMillis();
+                LOGGER.info("Statistics:" + (currentCount - preCount) * 1000 / (currentTime - preTime) + "   Clients:" + channels.get() + "   sum:" + currentCount);
+                preCount = currentCount;
+                preTime = currentTime;
+            }, 1, 1, TimeUnit.SECONDS);
         }
-
     }
 
     @Override

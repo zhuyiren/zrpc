@@ -18,7 +18,7 @@ package com.zhuyiren.rpc.handler;
 
 
 import com.zhuyiren.rpc.common.Packet;
-import com.zhuyiren.rpc.exception.TimeoutExcepiton;
+import com.zhuyiren.rpc.exception.TimeoutException;
 
 /**
  * Created by zhuyiren on 2017/6/3.
@@ -26,7 +26,7 @@ import com.zhuyiren.rpc.exception.TimeoutExcepiton;
 public interface CallHandler {
 
 
-    void call(Call call) throws TimeoutExcepiton;
+    void call(Call call) throws TimeoutException;
 
     void ready();
 

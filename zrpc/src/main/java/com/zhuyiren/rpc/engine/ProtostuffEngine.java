@@ -65,8 +65,7 @@ public class ProtostuffEngine extends AbstractEngine implements Engine {
 
     @Override
     public byte[] encodeResult(WrapReturn result) throws Exception {
-        byte[] resultBytes = ProtostuffIOUtil.toByteArray(result, WRAP_RETURN_SCHEMA, LinkedBuffer.allocate());
-        return resultBytes;
+        return ProtostuffIOUtil.toByteArray(result, WRAP_RETURN_SCHEMA, LinkedBuffer.allocate());
     }
 
     @Override

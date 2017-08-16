@@ -16,12 +16,9 @@
 
 package com.zhuyiren.rpc;
 
-import com.zhuyiren.rpc.engine.Engine;
 import io.netty.util.concurrent.EventExecutorGroup;
 
-import java.net.Socket;
 import java.net.SocketAddress;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -37,12 +34,11 @@ public interface Server {
 
     boolean start(SocketAddress address) throws IllegalArgumentException;
 
-    boolean start();
 
     boolean shutdown();
 
     Map<String,Object> getServices(SocketAddress address);
 
-    EventExecutorGroup getBussinessExecutors();
+    EventExecutorGroup getBusinessExecutors();
 
 }

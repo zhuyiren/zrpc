@@ -19,13 +19,15 @@ package com.zhuyiren.rpc.spring;
 import com.zhuyiren.rpc.engine.Engine;
 import com.zhuyiren.rpc.engine.ProtostuffEngine;
 import org.springframework.beans.factory.BeanDefinitionStoreException;
+import org.springframework.beans.factory.config.RuntimeBeanReference;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.xml.AbstractSingleBeanDefinitionParser;
-import org.springframework.beans.factory.xml.BeanDefinitionParserDelegate;
 import org.springframework.beans.factory.xml.ParserContext;
 import org.springframework.util.StringUtils;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 /**
  * Created by zhuyiren on 2017/8/3.
@@ -38,20 +40,19 @@ public class ZRpcServiceBeanDefinitionParser extends AbstractSingleBeanDefinitio
     private static final String ATTRIBUTE_ID = "id";
     private static final String ATTRIBUTE_HOST = "host";
     private static final String ATTRIBUTE_CACHED = "cached";
-    private static final String ATTRIBUTE_SERVICENAME = "serviceName";
+    private static final String ATTRIBUTE_SERVICE_NAME = "serviceName";
     private static final String ATTRIBUTE_PORT = "port";
+
+    private static final String ATTRIBUTE_REF="ref";
 
 
     private static final int PORT_DEFAULT = 3324;
 
 
-    private static final ClassLoader CLASS_LOADER = Thread.currentThread().getContextClassLoader();
 
 
     @Override
     protected void doParse(Element element, ParserContext parserContext, BeanDefinitionBuilder builder) {
-
-        BeanDefinitionParserDelegate delegate = new BeanDefinitionParserDelegate(parserContext.getReaderContext());
 
         String ifsClzAttr = element.getAttribute(ATTRIBUTE_CLASS);
         Class<?> ifsClzType = null;
@@ -84,7 +85,7 @@ public class ZRpcServiceBeanDefinitionParser extends AbstractSingleBeanDefinitio
         }
         builder.addPropertyValue("cache", cached);
 
-        String serviceNameAttr = element.getAttribute(ATTRIBUTE_SERVICENAME);
+        String serviceNameAttr = element.getAttribute(ATTRIBUTE_SERVICE_NAME);
         if (StringUtils.isEmpty(serviceNameAttr)) {
             serviceNameAttr = ifsClzAttr;
         }
@@ -97,8 +98,24 @@ public class ZRpcServiceBeanDefinitionParser extends AbstractSingleBeanDefinitio
         }
         builder.addPropertyValue("port", port);
 
+        Object clientRef=null;
 
-        delegate.parsePropertyElements(element, builder.getBeanDefinition());
+        NodeList childNodes = element.getChildNodes();
+        for (int index = 0; index < childNodes.getLength(); index++) {
+            Node item = childNodes.item(index);
+            if(item instanceof Element &&
+                    item.getLocalName().equals("clientRef") &&
+                    ((Element) item).hasAttribute(ATTRIBUTE_REF)){
+                clientRef= parseRef(parserContext,((Element) item));
+                break;
+            }
+        }
+
+        if(clientRef==null){
+            clientRef=new RuntimeBeanReference("client");
+        }
+
+        builder.addPropertyValue("client",clientRef);
     }
 
     @Override
@@ -115,4 +132,12 @@ public class ZRpcServiceBeanDefinitionParser extends AbstractSingleBeanDefinitio
         }
         return id;
     }
+
+    private Object parseRef(ParserContext parserContext,Element element){
+        String attribute = element.getAttribute(ATTRIBUTE_REF);
+        RuntimeBeanReference reference = new RuntimeBeanReference(attribute);
+        reference.setSource(parserContext.extractSource(element));
+        return reference;
+    }
+
 }

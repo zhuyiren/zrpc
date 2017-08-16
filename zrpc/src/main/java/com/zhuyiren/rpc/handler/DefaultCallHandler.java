@@ -51,7 +51,7 @@ public class DefaultCallHandler implements CallHandler {
     private final AtomicLong callId;
     private final ConcurrentHashMap<Long, Call> calls;
     private static final int TIME_OUT = 10000;
-    private Object synchronization;
+    private final Object synchronization;
     private volatile int state;
     private SocketAddress remoteAddress;
     private EventLoopGroup executors;
@@ -61,10 +61,10 @@ public class DefaultCallHandler implements CallHandler {
     private CallWriter callWriter;
 
 
-    public DefaultCallHandler(EventLoopGroup executors, ScheduledExecutorService connectThread, SocketAddress remoteAddress) {
+    public DefaultCallHandler(EventLoopGroup executors, ScheduledExecutorService connectThread, SocketAddress remoteAddress,boolean useZip) {
         callId = new AtomicLong(0);
         calls = new ConcurrentHashMap<>();
-        clientHandlerInitializer = new ClientHandlerInitializer(this);
+        clientHandlerInitializer = new ClientHandlerInitializer(this,useZip);
         synchronization = new Object();
         this.remoteAddress = remoteAddress;
         this.executors = executors;

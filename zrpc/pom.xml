@@ -12,7 +12,6 @@
 
 
     <dependencies>
-        <!-- https://mvnrepository.com/artifact/io.netty/netty-all -->
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-all</artifactId>
@@ -26,7 +25,6 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- https://mvnrepository.com/artifact/io.protostuff/protostuff-collectionschema -->
         <dependency>
             <groupId>io.protostuff</groupId>
             <artifactId>protostuff-collectionschema</artifactId>
@@ -43,9 +41,9 @@
             <groupId>org.springframework</groupId>
             <artifactId>spring-context</artifactId>
             <version>4.3.1.RELEASE</version>
+            <scope>provided</scope>
         </dependency>
 
-        <!-- https://mvnrepository.com/artifact/io.protostuff/protostuff-api -->
         <dependency>
             <groupId>io.protostuff</groupId>
             <artifactId>protostuff-api</artifactId>
@@ -58,7 +56,6 @@
             <version>1.5.3</version>
         </dependency>
 
-        <!-- https://mvnrepository.com/artifact/com.google.protobuf/protobuf-java -->
         <dependency>
             <groupId>com.google.protobuf</groupId>
             <artifactId>protobuf-java</artifactId>
@@ -68,6 +65,7 @@
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>4.12</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

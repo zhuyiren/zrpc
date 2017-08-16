@@ -17,12 +17,29 @@
 package com.zhuyiren.rpc.utils;
 
 import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by zhuyiren on 2017/5/20.
  */
 public class ClassUtils {
-    
+
+    private static final Map<Class<?>,Class<?>> primitiveMapped;
+
+    static {
+        primitiveMapped=new HashMap<>();
+        primitiveMapped.put(char.class,Character.class);
+        primitiveMapped.put(byte.class,Byte.class);
+        primitiveMapped.put(boolean.class,Boolean.class);
+        primitiveMapped.put(short.class,Short.class);
+        primitiveMapped.put(int.class,Integer.class);
+        primitiveMapped.put(float.class,Float.class);
+        primitiveMapped.put(long.class,Long.class);
+        primitiveMapped.put(double.class,Double.class);
+    }
+
+
     public static boolean compareMethodArguments(Method method, Class[] classes) {
         Class<?>[] parameterTypes = method.getParameterTypes();
         if (parameterTypes.length != classes.length) {
@@ -38,7 +55,7 @@ public class ClassUtils {
     }
 
     /**
-     * @param clz1
+     * @param clz1 为普通类型或者primitive类型
      * @param clz2 为普通类型或者装箱类型
      * @return
      */
@@ -47,56 +64,9 @@ public class ClassUtils {
             return true;
         }
 
-
         //判断是否装箱类型
-        if (clz1.equals(char.class) && clz2.equals(Character.class)) {
-            return true;
-        }
-        if (clz1.equals(boolean.class) && clz2.equals(Boolean.class)) {
-            return true;
-        }
-        if (clz1.equals(byte.class) && clz2.equals(Byte.class)) {
-            return true;
-        }
-        if (clz1.equals(short.class) && clz2.equals(Short.class)) {
-            return true;
-        }
-        if (clz1.equals(float.class) && clz2.equals(Float.class)) {
-            return true;
-        }
-        if (clz1.equals(int.class) && clz2.equals(Integer.class)) {
-            return true;
-        }
-        if (clz1.equals(double.class) && clz2.equals(Double.class)) {
-            return true;
-        }
-        if (clz1.equals(long.class) && clz2.equals(Long.class)) {
-            return true;
-        }
+        Class<?> boxedType = primitiveMapped.get(clz1);
+        return boxedType!=null && boxedType.equals(clz2);
 
-        return false;
-
-    }
-
-
-    public static Class<?> getWrapClass(Class primitiveClass){
-        if(primitiveClass.equals(void.class)){
-            return Void.class;
-        }else if(primitiveClass.equals(byte.class)){
-            return Byte.class;
-        }else if(primitiveClass.equals(char.class)){
-            return Character.class;
-        }else if(primitiveClass.equals(short.class)){
-            return Short.class;
-        }else if(primitiveClass.equals(int.class)){
-            return Integer.class;
-        }else if(primitiveClass.equals(long.class)){
-            return Long.class;
-        }else if(primitiveClass.equals(float.class)){
-            return Float.class;
-        }else if(primitiveClass.equals(double.class)){
-            return Double.class;
-        }
-        throw new IllegalArgumentException(primitiveClass+" is not a primitive type");
     }
 }

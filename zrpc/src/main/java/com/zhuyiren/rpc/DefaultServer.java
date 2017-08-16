@@ -17,9 +17,8 @@
 package com.zhuyiren.rpc;
 
 
-import com.zhuyiren.rpc.handler.*;
+import com.zhuyiren.rpc.handler.ServerHandlerInitializer;
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.AddressedEnvelope;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
@@ -27,50 +26,61 @@ import io.netty.util.concurrent.DefaultEventExecutorGroup;
 import io.netty.util.concurrent.EventExecutorGroup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sun.nio.ch.Net;
+import org.springframework.util.StringUtils;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.nio.channels.ServerSocketChannel;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Created by zhuyiren on 2017/5/18.
  */
 public class DefaultServer implements Server {
 
+    private static final String DEFAULT_HOST = "0.0.0.0";
+    private static final int DEFAULT_PORT = 3324;
+    private static final int DEFAULT_IO_THREAD_SIZE=Runtime.getRuntime().availableProcessors();
+
+
     private List<ProviderInformation> services = new ArrayList<>();
     private NioEventLoopGroup worker;
-    private EventExecutorGroup bussiness;
+    private EventExecutorGroup business;
     private ServerBootstrap serverBootstrap;
     private ServerHandlerInitializer initializerHandler;
+    private String host;
+    private int port;
 
-    private static final int DEFAULT_EVENT_LOOP_THREADS;
-    private static final String DEFAULT_HOST="0.0.0.0";
-    private static final int DEFAULT_PORT=3324;
+    private static final Logger LOGGER = LoggerFactory.getLogger(DefaultServer.class);
 
-    private static final Logger LOGGER= LoggerFactory.getLogger(DefaultServer.class);
-
-    static {
-        DEFAULT_EVENT_LOOP_THREADS = Runtime.getRuntime().availableProcessors() * 2;
-    }
-
-
-    public DefaultServer(){
-        this(0);
-    }
-
-
-    public DefaultServer(int size) {
-        LOGGER.debug("Io thread size:"+size+",bussiness threas size:"+size);
-        worker=new NioEventLoopGroup(size);
-        bussiness=new DefaultEventExecutorGroup(size);
-        initializerHandler =new ServerHandlerInitializer(this);
+    public DefaultServer(String host, int port, int ioThreadSize,boolean useZip) {
+        LOGGER.debug("Io thread size:" + ioThreadSize + ",business thread size:" + ioThreadSize);
+        worker = new NioEventLoopGroup(ioThreadSize);
+        business = new DefaultEventExecutorGroup(ioThreadSize);
+        initializerHandler = new ServerHandlerInitializer(this,useZip);
         initServerBootstrap();
+        this.host=host;
+        this.port=port;
     }
 
-    private void initServerBootstrap(){
-        serverBootstrap=new ServerBootstrap();
+
+    public DefaultServer() {
+        this(false);
+    }
+
+
+    public DefaultServer(boolean useZip){
+        this(DEFAULT_IO_THREAD_SIZE,useZip);
+    }
+
+
+    public DefaultServer(int ioThreadSize,boolean useZip) {
+        this(DEFAULT_HOST,DEFAULT_PORT,ioThreadSize,useZip);
+    }
+
+    private void initServerBootstrap() {
+        serverBootstrap = new ServerBootstrap();
         serverBootstrap.group(worker, worker)
                 .channel(NioServerSocketChannel.class)
                 .option(ChannelOption.SO_BACKLOG, 1024)
@@ -78,26 +88,35 @@ public class DefaultServer implements Server {
     }
 
     @Override
-    public boolean register(String serviceName, Object handler,String host,int port) {
-        InetSocketAddress address=new InetSocketAddress(host,port);
-        ProviderInformation provider = findProvider(address);
-        if(provider==null){
-            provider=new ProviderInformation(address);
-            services.add(provider);
+    public boolean register(String serviceName, Object handler, String host, int port) {
+        if(!StringUtils.hasText(host)){
+            host=this.host;
         }
-
-        return provider.addService(serviceName,handler);
+        if(port<=0){
+            port=this.port;
+        }
+        InetSocketAddress address = new InetSocketAddress(host, port);
+        ProviderInformation provider = findProvider(address);
+        if (provider == null) {
+            provider = new ProviderInformation(address);
+            services.add(provider);
+            start(provider.getAddress());
+        }
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("启动服务：[服务地址:"+provider.getAddress()+"],[服务名称:"+serviceName+"],[处理类:"+handler+"]");
+        }
+        return provider.addService(serviceName, handler);
     }
 
 
     @Override
     public boolean register(String serviceName, Object handler, int port) {
-        return register(serviceName,handler,DEFAULT_HOST,port);
+        return register(serviceName, handler, host, port);
     }
 
     @Override
     public boolean register(String serviceName, Object handler) {
-        return register(serviceName,handler,DEFAULT_HOST,DEFAULT_PORT);
+        return register(serviceName, handler, host, port);
     }
 
     @Override
@@ -107,7 +126,7 @@ public class DefaultServer implements Server {
         }
 
         ProviderInformation provider = findProvider(address);
-        if(provider==null || provider.isStart()){
+        if (provider == null || provider.isStart()) {
             return false;
         }
 
@@ -116,10 +135,7 @@ public class DefaultServer implements Server {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
-        if(LOGGER.isDebugEnabled()) {
-            LOGGER.debug("启动服务：");
-            LOGGER.debug(provider.toString());
-        }
+
         provider.setStart(true);
         return true;
     }
@@ -128,39 +144,38 @@ public class DefaultServer implements Server {
     public boolean shutdown() {
 
         worker.shutdownGracefully();
-        bussiness.shutdownGracefully();
+        business.shutdownGracefully();
         LOGGER.debug("Shutdown server");
         return true;
     }
 
-    @Override
-    public boolean start() {
-        for (ProviderInformation provider : services) {
-            start(provider.getAddress());
-        }
-        return true;
-    }
 
     @Override
-    public Map<String,Object> getServices(SocketAddress address) {
+    public Map<String, Object> getServices(SocketAddress address) {
         ProviderInformation provider = findProvider(address);
-        return provider.getServies();
+        return provider.getServices();
     }
 
     @Override
-    public EventExecutorGroup getBussinessExecutors() {
-        return bussiness;
+    public EventExecutorGroup getBusinessExecutors() {
+        return business;
     }
 
 
-
-
-    private ProviderInformation findProvider(SocketAddress address){
+    private ProviderInformation findProvider(SocketAddress address) {
+        SocketAddress anyAddress = new InetSocketAddress("0.0.0.0", ((InetSocketAddress) address).getPort());
         for (ProviderInformation provider : services) {
-            if(provider.getAddress().equals(address)){
+            if (provider.getAddress().equals(anyAddress)) {
                 return provider;
             }
         }
+
+        for (ProviderInformation provider : services) {
+            if (provider.getAddress().equals(address)) {
+                return provider;
+            }
+        }
+
         return null;
     }
 

@@ -20,8 +20,8 @@ import com.zhuyiren.rpc.common.Packet;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by zhuyiren on 2017/5/19.
@@ -31,7 +31,7 @@ public class DefaultRequestDispatch extends ChannelInboundHandlerAdapter impleme
 
 
     private RequestHandlerAdapter handlerAdapter;
-    private Map<String,Object> serviceHandlers=new HashMap<>();
+    private Map<String,Object> serviceHandlers=new ConcurrentHashMap<>();
 
     public DefaultRequestDispatch(RequestHandlerAdapter handlerAdapter){
         this.handlerAdapter=handlerAdapter;

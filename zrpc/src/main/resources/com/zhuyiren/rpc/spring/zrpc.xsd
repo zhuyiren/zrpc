@@ -63,7 +63,7 @@
                 </xsd:restriction>
             </xsd:simpleType>
         </xsd:attribute>
-        <xsd:anyAttribute namespace="##other" processContents="lax"/>
+        <xsd:attribute name="useZip" type="xsd:boolean"/>
     </xsd:attributeGroup>
 
 
@@ -81,14 +81,17 @@
                 </xsd:restriction>
             </xsd:simpleType>
         </xsd:attribute>
-        <xsd:anyAttribute namespace="##other" processContents="lax"/>
     </xsd:attributeGroup>
 
     <xsd:group name="serviceElements">
         <xsd:sequence>
             <xsd:element ref="beans:description" minOccurs="0"/>
             <xsd:choice minOccurs="0" maxOccurs="unbounded">
-                <xsd:element ref="beans:property"/>
+                <xsd:element name="clientRef">
+                    <xsd:complexType>
+                        <xsd:attribute name="ref"/>
+                    </xsd:complexType>
+                </xsd:element>
             </xsd:choice>
         </xsd:sequence>
     </xsd:group>
@@ -104,17 +107,27 @@
                 </xsd:restriction>
             </xsd:simpleType>
         </xsd:attribute>
+        <xsd:attribute name="host" default="0.0.0.0" type="xsd:string"/>
+        <xsd:attribute name="ioThreadSize" type="xsd:positiveInteger"/>
+        <xsd:attribute name="useZip" type="xsd:boolean"/>
     </xsd:attributeGroup>
 
     
-    <xsd:element name="provider">
+<!--    <xsd:element name="provider">
         <xsd:complexType>
             <xsd:complexContent>
-                <xsd:extension base="beans:identifiedType"/>
-
+                <xsd:extension base="beans:identifiedType">
+                    <xsd:attributeGroup ref="providerAttributes"/>
+                </xsd:extension>
             </xsd:complexContent>
         </xsd:complexType>
-    </xsd:element>
+    </xsd:element>-->
+
+    <xsd:attributeGroup name="providerAttributes">
+        <xsd:attribute name="host" type="xsd:string"/>
+        <xsd:attribute name="port" type="xsd:string"/>
+        <xsd:attribute name="serviceName" type="xsd:string"/>
+    </xsd:attributeGroup>
 
 
     <xsd:group name="serverGroup">
@@ -125,5 +138,19 @@
             </xsd:choice>
         </xsd:sequence>
     </xsd:group>
+    
+    
+    <xsd:element name="service-scan">
+        <xsd:complexType>
+            <xsd:attribute name="base-package" type="xsd:string" use="required"/>
+        </xsd:complexType>
+    </xsd:element>
+
+    <xsd:element name="provider-scan">
+        <xsd:complexType>
+            <xsd:attribute name="base-package" type="xsd:string" use="required"/>
+        </xsd:complexType>
+    </xsd:element>
+
 
 </xsd:schema>

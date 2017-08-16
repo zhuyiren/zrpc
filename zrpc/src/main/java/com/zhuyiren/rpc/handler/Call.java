@@ -18,7 +18,7 @@ package com.zhuyiren.rpc.handler;
 
 import com.zhuyiren.rpc.common.Packet;
 import com.zhuyiren.rpc.exception.RpcException;
-import com.zhuyiren.rpc.exception.TimeoutExcepiton;
+import com.zhuyiren.rpc.exception.TimeoutException;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
@@ -82,7 +82,7 @@ public class Call {
         thread = Thread.currentThread();
         LockSupport.parkNanos(unit.toNanos(timeout));
         if (response == null) {
-            exception = new TimeoutExcepiton("Time out");
+            exception = new TimeoutException("Time out");
             done = true;
         }
     }

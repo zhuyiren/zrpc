@@ -16,7 +16,6 @@
 
 package com.zhuyiren.rpc.handler;
 
-import com.zhuyiren.rpc.ProviderInformation;
 import com.zhuyiren.rpc.Server;
 import com.zhuyiren.rpc.common.PacketDecoder;
 import com.zhuyiren.rpc.common.PacketEncoder;
@@ -34,7 +33,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.SocketAddress;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -48,18 +46,15 @@ public class ServerHandlerInitializer extends ChannelInitializer<SocketChannel> 
     private StatisticsHandler statisticsHandler;
     private RequestHandlerAdapter handlerAdapter;
 
-    private static final boolean useZip;
-
-    static {
-        useZip = Boolean.parseBoolean(System.getProperty("useZip", "false"));
-        LOGGER.debug("Use zip:" + useZip);
-    }
+    private boolean useZip;
 
 
-    public ServerHandlerInitializer(Server server) {
+    public ServerHandlerInitializer(Server server,boolean useZip) {
         this.server = server;
         statisticsHandler = new StatisticsHandler();
+        this.useZip=useZip;
         initHandlers();
+
     }
 
     @Override
@@ -89,7 +84,7 @@ public class ServerHandlerInitializer extends ChannelInitializer<SocketChannel> 
                 .addLast(new PacketEncoder())
                 .addLast(statisticsHandler)
                 .addLast(new ServerIdleHandler())
-                .addLast(server.getBussinessExecutors(), dispatcher);
+                .addLast(server.getBusinessExecutors(), dispatcher);
     }
 
 

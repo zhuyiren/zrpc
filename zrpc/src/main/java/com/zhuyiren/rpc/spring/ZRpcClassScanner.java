@@ -14,18 +14,25 @@
  * limitations under the License.
  */
 
-package com.zhuyiren.rpc.exception;
+package com.zhuyiren.rpc.spring;
+
+import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
+import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 
 /**
- * Created by zhuyiren on 2017/6/17.
+ * @author zhuyiren
+ * @date 2017/8/12
  */
-public class TimeoutExcepiton extends RpcException {
+public class ZRpcClassScanner extends ClassPathScanningCandidateComponentProvider {
 
 
-
-    public TimeoutExcepiton(String msg){
-        super(msg);
+    public ZRpcClassScanner() {
+        super(false);
     }
 
 
+    @Override
+    protected boolean isCandidateComponent(AnnotatedBeanDefinition beanDefinition) {
+        return true;
+    }
 }

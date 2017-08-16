@@ -41,9 +41,9 @@ public class ZRpcClientBeanDefinitionParser extends AbstractSingleBeanDefinition
 
 
     private static final Logger LOGGER= LoggerFactory.getLogger(ZRpcClientBeanDefinitionParser.class);
-    private static final String WORKERTHREADCOUNT_ATTRIBUTE="workerThreadCount";
+    private static final String ATTRIBUTE_WORKER_THREAD_COUNT ="workerThreadCount";
+    private static final String ATTRIBUTE_USE_ZIP ="useZip";
     private static final String ENGINES_ELEMENT="engines";
-    private static final String LIST_ELEMENT="list";
 
     private static final String CLIENT_NAME_DEFAULT = "client";
 
@@ -51,15 +51,32 @@ public class ZRpcClientBeanDefinitionParser extends AbstractSingleBeanDefinition
     protected void doParse(Element element, ParserContext parserContext, BeanDefinitionBuilder builder) {
         BeanDefinitionParserDelegate delegate=new BeanDefinitionParserDelegate(parserContext.getReaderContext());
 
-        String workerCountAttr = element.getAttribute(WORKERTHREADCOUNT_ATTRIBUTE);
+        String workerCountAttr = element.getAttribute(ATTRIBUTE_WORKER_THREAD_COUNT);
         int workCount=0;
         if(StringUtils.hasText(workerCountAttr)){
             workCount=Integer.parseInt(workerCountAttr);
         }
         builder.addPropertyValue("workerThreadCount",workCount);
+        builder.setDestroyMethodName("shutdown");
+
+        String useZipAttr = element.getAttribute(ATTRIBUTE_USE_ZIP);
+        boolean useZip=false;
+        if(StringUtils.hasText(useZipAttr)){
+            try {
+                useZip=Boolean.parseBoolean(useZipAttr);
+            }catch (Exception e){
+                parserContext.getReaderContext().error("The useZip attribute is not boolean type",element);
+            }
+        }
+        builder.addPropertyValue("useZip",useZip);
+
+
         List<Element> enginesElements = DomUtils.getChildElementsByTagName(element, ENGINES_ELEMENT);
         if(enginesElements.size()>1){
-            parserContext.getReaderContext().error("must have one engines element",element);
+            parserContext.getReaderContext().error("must only have one engines element",element);
+        }
+        if(enginesElements.size()<=0){
+            return;
         }
         Element enginesElement = enginesElements.get(0);
         List<Element> listElements = DomUtils.getChildElementsByTagName(enginesElement, "list");
@@ -77,7 +94,7 @@ public class ZRpcClientBeanDefinitionParser extends AbstractSingleBeanDefinition
                     Engine engine = engineCls.newInstance();
                     if(engines.contains(engine)){
                        if(LOGGER.isDebugEnabled()){
-                           LOGGER.debug(engineCls +" have registed the Client once");
+                           LOGGER.debug(engineCls +" have registered the Client once");
                            continue;
                        }
                     }
@@ -91,6 +108,9 @@ public class ZRpcClientBeanDefinitionParser extends AbstractSingleBeanDefinition
             }
         }
         builder.addPropertyValue("engines",engines);
+
+
+
 
     }
 

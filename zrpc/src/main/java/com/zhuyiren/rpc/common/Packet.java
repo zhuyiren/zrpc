@@ -60,68 +60,17 @@ public class Packet implements Writable {
         this.exception = request.exception;
     }
 
-    private void writeDelimitString(String str, DataOutputStream out) throws IOException {
-        int length = str.length();
-        out.writeShort(length * 2);
-        byte[] bytes = new byte[length * 2];
-        for (int index = 0; index < length; index++) {
-            char c = str.charAt(index);
-            bytes[index * 2] = (byte) ((c >>> 8) & 0xFF);
-            bytes[index * 2 + 1] = (byte) ((c >>> 0) & 0xFF);
-        }
-        out.write(bytes);
-        //  out.writeUTF(str);
-    }
 
-    private String readDelimitString(DataInputStream din) throws IOException {
-        short length = din.readShort();
-        byte[] bytes = new byte[length];
-        char[] chars = new char[length / 2];
-        din.read(bytes);
-        for (int index = 0; index < length / 2; index++) {
-            chars[index] = (char) (bytes[index * 2] << 8 | bytes[index * 2 + 1]);
-        }
-        return new String(chars);
-        //return din.readUTF();
-    }
+
 
     @Override
     public void write(OutputStream out) throws IOException {
-        /*DataOutputStream dout = new DataOutputStream(out);
-        dout.writeLong(id);
-        writeDelimitString(serviceName,dout);
-        writeDelimitString(type,dout);
-        writeDelimitString(methodName,dout);
-        if(exception==null){
-            writeDelimitString("",dout);
-        }else {
-            writeDelimitString(exception,dout);
-        }
-        dout.writeInt(entity.length);
-        dout.write(entity);
-        dout.close();*/
-
         ProtostuffIOUtil.writeDelimitedTo(out, this, schema, LinkedBuffer.allocate());
     }
 
 
     @Override
     public void readFields(InputStream in) throws IOException {
-
-        /*DataInputStream din=new DataInputStream(in);
-        this.id=din.readLong();
-        this.serviceName=readDelimitString(din);
-        this.type=readDelimitString(din);
-        this.methodName=readDelimitString(din);
-        String temp = readDelimitString(din);
-        if(temp.equals("")){
-            exception=null;
-        }else {
-            exception=temp;
-        }
-        entity=new byte[din.readInt()];
-        din.read(entity);
-        din.close();*/
         ProtostuffIOUtil.mergeDelimitedFrom(in, this, schema);
     }
 

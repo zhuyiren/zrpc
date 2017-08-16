@@ -14,25 +14,18 @@
  * limitations under the License.
  */
 
-package com.zhuyiren.rpc.handler;
-
-import java.io.Serializable;
+package com.zhuyiren.rpc.exception;
 
 /**
- * Created by zhuyiren on 2017/6/29.
+ * Created by zhuyiren on 2017/6/17.
  */
-public class ArgumentHelper implements Serializable {
+public class TimeoutException extends RpcException {
 
-    private static final long serialVersionUID=1L;
 
-    public Class[] argumentClasses;
-    public Object[] arguments;
 
-    public ArgumentHelper() {
+    public TimeoutException(String msg){
+        super(msg);
     }
 
-    public ArgumentHelper(Object[] arguments,Class[] argumentClasses){
-        this.arguments=arguments;
-        this.argumentClasses=argumentClasses;
-    }
+
 }

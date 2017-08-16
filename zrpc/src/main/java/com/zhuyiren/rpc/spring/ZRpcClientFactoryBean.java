@@ -21,7 +21,7 @@ import com.zhuyiren.rpc.DefaultClient;
 import com.zhuyiren.rpc.engine.Engine;
 import com.zhuyiren.rpc.engine.NormalEngine;
 import com.zhuyiren.rpc.engine.ProtostuffEngine;
-import org.springframework.beans.factory.FactoryBean;
+import org.springframework.beans.factory.SmartFactoryBean;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,33 +29,35 @@ import java.util.List;
 /**
  * Created by zhuyiren on 2017/8/2.
  */
-public class ZRpcClientFactoryBean implements FactoryBean<Client> {
+public class ZRpcClientFactoryBean implements SmartFactoryBean<Client> {
 
 
     private Engine[] engines;
     private int workerThreadCount;
+    private boolean useZip;
     private Client client;
 
     @Override
     public Client getObject() throws Exception {
-        DefaultClient client = new DefaultClient(workerThreadCount);
-        if (engines==null || engines.length==0) {
-            engines=defaultEngines();
+
+        client = new DefaultClient(workerThreadCount,useZip);
+
+        if (engines == null || engines.length == 0) {
+            engines = defaultEngines();
         }
         for (Engine engine : engines) {
             client.addEngine(engine);
         }
-        this.client=client;
+        this.client = client;
         return client;
     }
 
 
-    public void shutdown(){
-        if(client!=null){
+    public void shutdown() {
+        if (client != null) {
             client.shutdown();
         }
     }
-
 
 
     @Override
@@ -68,6 +70,16 @@ public class ZRpcClientFactoryBean implements FactoryBean<Client> {
         return true;
     }
 
+
+    @Override
+    public boolean isPrototype() {
+        return false;
+    }
+
+    @Override
+    public boolean isEagerInit() {
+        return true;
+    }
 
     public Engine[] getEngines() {
         return engines;
@@ -85,8 +97,16 @@ public class ZRpcClientFactoryBean implements FactoryBean<Client> {
         this.workerThreadCount = workerThreadCount;
     }
 
-    private Engine[] defaultEngines(){
-        List<Engine> engines=new ArrayList<>();
+    public boolean isUseZip() {
+        return useZip;
+    }
+
+    public void setUseZip(boolean useZip) {
+        this.useZip = useZip;
+    }
+
+    private Engine[] defaultEngines() {
+        List<Engine> engines = new ArrayList<>();
         engines.add(new NormalEngine());
         engines.add(new ProtostuffEngine());
         return engines.toArray(new Engine[0]);

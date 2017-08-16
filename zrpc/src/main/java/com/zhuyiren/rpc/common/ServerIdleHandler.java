@@ -14,53 +14,40 @@
  * limitations under the License.
  */
 
-
 package com.zhuyiren.rpc.common;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
-
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Created by zhuyiren on 2017/8/7.
  */
-public class ClientIdleHandler extends ChannelInboundHandlerAdapter {
+public class ServerIdleHandler extends ChannelInboundHandlerAdapter {
 
+    private static final Logger LOGGER= LoggerFactory.getLogger(ServerIdleHandler.class);
 
-    private ScheduledFuture<?> future;
-
-    private static final Packet PING_PACKET;
-
-    private static final long PERIOD = 5000;
-
+    private static final Packet PACKET_PONG;
 
     static {
-        PING_PACKET = new Packet();
-        PING_PACKET.setType(CommonConstant.IDLE_PING);
-    }
-
-    public ClientIdleHandler() {
-    }
-
-
-    @Override
-    public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        future = ctx.executor().scheduleWithFixedDelay(() ->
-                        ctx.writeAndFlush(PING_PACKET)
-                , PERIOD, PERIOD, TimeUnit.MILLISECONDS);
-        super.channelActive(ctx);
+        PACKET_PONG=new Packet();
+        PACKET_PONG.setType(CommonConstant.IDLE_PONG);
     }
 
     @Override
-    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-        if (future != null) {
-            future.cancel(false);
+    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+
+        if(msg instanceof Packet){
+            if (CommonConstant.IDLE_PING.equals(((Packet) msg).getType())) {
+                ctx.writeAndFlush(PACKET_PONG);
+                LOGGER.debug("receive a heartbeat");
+                return;
+            }
         }
-        super.channelInactive(ctx);
+        ctx.fireChannelRead(msg);
     }
 
 

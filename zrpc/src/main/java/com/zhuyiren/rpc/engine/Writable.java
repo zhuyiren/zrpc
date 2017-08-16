@@ -28,7 +28,7 @@ public interface Writable {
     /**
      * Serialize the fields of this object to <code>out</code>.
      *
-     * @param out <code>DataOuput</code> to serialize this object into.
+     * @param out <code>DataOutput</code> to serialize this object into.
      * @throws IOException
      */
     void write(OutputStream out) throws IOException;
@@ -39,7 +39,7 @@ public interface Writable {
      * <p>For efficiency, implementations should attempt to re-use storage in the
      * existing object where possible.</p>
      *
-     * @param in <code>DataInput</code> to deseriablize this object from.
+     * @param in <code>DataInput</code> to deserialize this object from.
      * @throws IOException
      */
     void readFields(InputStream in) throws IOException;

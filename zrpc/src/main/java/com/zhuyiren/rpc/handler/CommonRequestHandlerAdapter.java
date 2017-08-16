@@ -23,8 +23,7 @@ import com.zhuyiren.rpc.utils.ClassUtils;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 /**
  * Created by zhuyiren on 2017/6/29.
@@ -32,10 +31,13 @@ import java.util.List;
 public class CommonRequestHandlerAdapter implements RequestHandlerAdapter {
 
 
-    private List<Engine> engines;
+    private final List<Engine> engines;
+    private final Map<MethodHolder,Method> methodMap;
+
 
     public  CommonRequestHandlerAdapter(){
         engines=new ArrayList<>();
+        methodMap=new HashMap<>();
     }
 
     @Override
@@ -58,11 +60,11 @@ public class CommonRequestHandlerAdapter implements RequestHandlerAdapter {
                 response.setEntity(responseBytes);
                 return response;
             } catch (IllegalAccessException e) {
-                exception = e.getMessage();
+                exception = e.toString();
             } catch (InvocationTargetException e) {
-                exception = e.getCause().getMessage();
+                exception = e.getCause().toString();
             } catch (Exception e) {
-                exception = e.getMessage();
+                exception = e.toString();
             }
         }
         Packet response = new Packet(request);
@@ -72,23 +74,21 @@ public class CommonRequestHandlerAdapter implements RequestHandlerAdapter {
 
     @Override
     public boolean support(Packet request) {
-        String type = request.getType();
-        for (Engine engine : engines) {
-            if (engine.getType().equals(type)) {
-                return true;
-            }
-        }
-        return false;
+        return findEngine(request.getType()) != null;
     }
 
 
     private Method getMethod(Class<?> clz, String methodName, Class[] argumentClass) {
-        Method method = null;
-        for (Method item : clz.getMethods()) {
-            if (item.getName().equals(methodName)) {
-                if (ClassUtils.compareMethodArguments(item, argumentClass)) {
-                    method = item;
-                    break;
+        MethodHolder methodHolder = new MethodHolder(clz, methodName, argumentClass);
+        Method method = methodMap.get(methodHolder);
+        if(method==null) {
+            for (Method item : clz.getMethods()) {
+                if (item.getName().equals(methodName)) {
+                    if (ClassUtils.compareMethodArguments(item, argumentClass)) {
+                        method = item;
+                        methodMap.put(methodHolder,method);
+                        break;
+                    }
                 }
             }
         }
@@ -118,6 +118,37 @@ public class CommonRequestHandlerAdapter implements RequestHandlerAdapter {
             return;
         }
         engines.add(engine);
+    }
+
+
+
+    private final static class MethodHolder{
+        private final Class<?> targetClass;
+        private final String methodName;
+        private final Class<?>[] argumentClasses;
+        private final int hash;
+
+        public MethodHolder(Class<?> targetClass, String methodName, Class<?>[] argumentClasses) {
+            this.targetClass = targetClass;
+            this.methodName = methodName;
+            this.argumentClasses = argumentClasses;
+            hash=hashCode();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof MethodHolder)) return false;
+            MethodHolder that = (MethodHolder) o;
+            return Objects.equals(targetClass, that.targetClass) &&
+                    Objects.equals(methodName, that.methodName) &&
+                    Arrays.equals(argumentClasses, that.argumentClasses);
+        }
+
+        @Override
+        public int hashCode() {
+            return hash;
+        }
     }
 
 

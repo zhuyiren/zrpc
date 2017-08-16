@@ -19,7 +19,7 @@ package com.zhuyiren.rpc.spring;
 import com.zhuyiren.rpc.Client;
 import com.zhuyiren.rpc.engine.Engine;
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.FactoryBean;
+import org.springframework.beans.factory.SmartFactoryBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
@@ -28,7 +28,7 @@ import java.net.InetSocketAddress;
 /**
  * Created by zhuyiren on 2017/8/2.
  */
-public class ZRpcServiceFactoryBean implements FactoryBean,ApplicationContextAware{
+public class ZRpcServiceFactoryBean implements SmartFactoryBean,ApplicationContextAware{
 
 
     private Class<?> ifcCls;
@@ -58,6 +58,9 @@ public class ZRpcServiceFactoryBean implements FactoryBean,ApplicationContextAwa
 
     @Override
     public Class<?> getObjectType() {
+        if(ifcCls==null){
+            return null;
+        }
         return ifcCls;
     }
 
@@ -66,6 +69,15 @@ public class ZRpcServiceFactoryBean implements FactoryBean,ApplicationContextAwa
         return true;
     }
 
+    @Override
+    public boolean isPrototype() {
+        return false;
+    }
+
+    @Override
+    public boolean isEagerInit() {
+        return true;
+    }
 
     public Class<?> getIfcCls() {
         return ifcCls;

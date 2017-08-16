@@ -37,17 +37,12 @@ public class ClientHandlerInitializer extends ChannelInitializer<SocketChannel> 
     private static final Logger LOGGER = LoggerFactory.getLogger(ClientHandlerInitializer.class);
 
     private CallHandler callHandler;
-    private static final boolean useZip;
+    private  boolean useZip;
 
-    static {
 
-        useZip = Boolean.parseBoolean(System.getProperty("useZip", "false"));
-        LOGGER.debug("Use zip:" + useZip);
-
-    }
-
-    public ClientHandlerInitializer(CallHandler callHandler) {
+    public ClientHandlerInitializer(CallHandler callHandler,boolean useZip) {
         this.callHandler = callHandler;
+        this.useZip=useZip;
     }
 
 

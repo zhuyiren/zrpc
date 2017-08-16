@@ -28,5 +28,8 @@ public class ZRpcNamespaceHandler extends NamespaceHandlerSupport {
     public void init() {
         registerBeanDefinitionParser("client",new ZRpcClientBeanDefinitionParser());
         registerBeanDefinitionParser("service",new ZRpcServiceBeanDefinitionParser());
+        registerBeanDefinitionParser("server",new ZRpcServerBeanDefinitionParser());
+        registerBeanDefinitionParser("provider-scan",new ZRpcProviderScanBeanDefinitionParser());
+        registerBeanDefinitionParser("service-scan",new ZRpcServiceScanBeanDefinitionParser());
     }
 }
