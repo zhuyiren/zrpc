@@ -43,10 +43,8 @@ public class RequestHandler extends ChannelInboundHandlerAdapter implements Call
     public void writeCall(Call call) {
         context.writeAndFlush(call.getRequest()).addListener(future -> {
             if(future.cause()!=null){
-                call.setException(new ExecuteException(future.cause().getMessage()));
-                synchronized (call){
-                    call.complete();
-                }
+                call.getRequest().setException(future.cause().getMessage());
+                callHandler.completeCall(call.getRequest());
             }
         });
     }
@@ -73,7 +71,6 @@ public class RequestHandler extends ChannelInboundHandlerAdapter implements Call
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        cause.printStackTrace();
         ctx.fireExceptionCaught(cause);
 
     }

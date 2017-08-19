@@ -21,17 +21,17 @@ import java.io.Serializable;
 /**
  * Created by zhuyiren on 2017/6/29.
  */
-public class ArgumentHelper implements Serializable {
+public class ArgumentHolder implements Serializable {
 
     private static final long serialVersionUID=1L;
 
     public Class[] argumentClasses;
     public Object[] arguments;
 
-    public ArgumentHelper() {
+    public ArgumentHolder() {
     }
 
-    public ArgumentHelper(Object[] arguments,Class[] argumentClasses){
+    public ArgumentHolder(Object[] arguments, Class[] argumentClasses){
         this.arguments=arguments;
         this.argumentClasses=argumentClasses;
     }

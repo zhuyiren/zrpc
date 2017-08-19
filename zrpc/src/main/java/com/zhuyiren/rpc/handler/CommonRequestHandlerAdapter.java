@@ -31,12 +31,12 @@ import java.util.*;
 public class CommonRequestHandlerAdapter implements RequestHandlerAdapter {
 
 
-    private final List<Engine> engines;
+    private final Map<String,Engine> engineMap;
     private final Map<MethodHolder,Method> methodMap;
 
 
     public  CommonRequestHandlerAdapter(){
-        engines=new ArrayList<>();
+        engineMap=new HashMap<>();
         methodMap=new HashMap<>();
     }
 
@@ -48,9 +48,9 @@ public class CommonRequestHandlerAdapter implements RequestHandlerAdapter {
         } else {
             try {
                 Engine engine=findEngine(request.getType());
-                ArgumentHelper argumentHelper = engine.decodeArgument(request.getEntity());
-                Object[] arguments = argumentHelper.arguments;
-                Class[] classes = argumentHelper.argumentClasses;
+                ArgumentHolder argumentHolder = engine.decodeArgument(request.getEntity());
+                Object[] arguments = argumentHolder.arguments;
+                Class[] classes = argumentHolder.argumentClasses;
                 Method method = getMethod(handler.getClass(), request.getMethodName(), classes);
                 Object result = method.invoke(handler, arguments);
                 Packet response = new Packet(request);
@@ -80,18 +80,16 @@ public class CommonRequestHandlerAdapter implements RequestHandlerAdapter {
 
     private Method getMethod(Class<?> clz, String methodName, Class[] argumentClass) {
         MethodHolder methodHolder = new MethodHolder(clz, methodName, argumentClass);
-        Method method = methodMap.get(methodHolder);
-        if(method==null) {
+        Method method = methodMap.computeIfAbsent(methodHolder, key -> {
             for (Method item : clz.getMethods()) {
                 if (item.getName().equals(methodName)) {
                     if (ClassUtils.compareMethodArguments(item, argumentClass)) {
-                        method = item;
-                        methodMap.put(methodHolder,method);
-                        break;
+                        return item;
                     }
                 }
             }
-        }
+            return null;
+        });
         return method;
     }
 
@@ -103,21 +101,12 @@ public class CommonRequestHandlerAdapter implements RequestHandlerAdapter {
 
 
     private Engine findEngine(String type){
-        for (Engine engine : engines) {
-            if(engine.getType().equals(type)){
-                return engine;
-            }
-        }
-        return null;
+        return engineMap.get(type);
     }
 
 
     public void addEngine(Engine engine){
-        Engine original = findEngine(engine.getType());
-        if(original!=null){
-            return;
-        }
-        engines.add(engine);
+        engineMap.computeIfAbsent(engine.getType(),key->engine);
     }
 
 
@@ -132,7 +121,7 @@ public class CommonRequestHandlerAdapter implements RequestHandlerAdapter {
             this.targetClass = targetClass;
             this.methodName = methodName;
             this.argumentClasses = argumentClasses;
-            hash=hashCode();
+            hash=evaluateHash(targetClass,methodName,argumentClasses);
         }
 
         @Override
@@ -148,6 +137,12 @@ public class CommonRequestHandlerAdapter implements RequestHandlerAdapter {
         @Override
         public int hashCode() {
             return hash;
+        }
+
+
+        private int evaluateHash(Class<?> targetClass,String methodName,Class<?>[] argumentClasses){
+            int hash = Objects.hash(targetClass, methodName);
+            return hash * 31 + Arrays.hashCode(argumentClasses);
         }
     }
 

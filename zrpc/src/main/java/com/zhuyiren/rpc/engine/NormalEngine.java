@@ -17,12 +17,13 @@
 package com.zhuyiren.rpc.engine;
 
 import com.zhuyiren.rpc.common.WrapReturn;
-import com.zhuyiren.rpc.handler.ArgumentHelper;
+import com.zhuyiren.rpc.handler.ArgumentHolder;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.lang.reflect.Type;
 
 /**
  * Created by zhuyiren on 2017/6/3.
@@ -38,40 +39,40 @@ public class NormalEngine extends AbstractEngine implements Engine {
 
 
     @Override
-    public byte[] encodeArgument(Object[] arguments) throws Exception {
+    public byte[] encodeArgument(ArgumentHolder argumentHolder) throws Exception {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         ObjectOutputStream oos = new ObjectOutputStream(bos);
-        if (arguments == null) {
-            arguments = new Object[]{};
-        }
-        Class[] classes=new Class[arguments.length];
-        for (int index = 0; index < classes.length; index++) {
-            classes[index]=arguments[index].getClass();
-        }
-        oos.writeObject(new ArgumentHelper(arguments,classes));
-        return bos.toByteArray();
+        oos.writeObject(argumentHolder);
+        byte[] result = bos.toByteArray();
+        oos.close();
+        return result;
     }
 
     @Override
-    public ArgumentHelper decodeArgument(byte[] inBytes) throws Exception {
+    public ArgumentHolder decodeArgument(byte[] inBytes) throws Exception {
         ByteArrayInputStream bis = new ByteArrayInputStream(inBytes);
-
         ObjectInputStream ois = new ObjectInputStream(bis);
-        return ((ArgumentHelper) ois.readObject());
+        ArgumentHolder result = (ArgumentHolder) ois.readObject();
+        ois.close();
+        return result;
     }
 
     @Override
-    public byte[] encodeResult(WrapReturn result) throws Exception {
+    public byte[] encodeResult(WrapReturn wrapReturn) throws Exception {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         ObjectOutputStream oos = new ObjectOutputStream(bos);
-        oos.writeObject(result);
-        return bos.toByteArray();
+        oos.writeObject(wrapReturn);
+        byte[] result = bos.toByteArray();
+        oos.close();
+        return result;
     }
 
     @Override
-    public WrapReturn decodeResult(byte[] inBytes) throws Exception {
+    public WrapReturn decodeResult(byte[] inBytes, Type type) throws Exception {
         ByteArrayInputStream bis = new ByteArrayInputStream(inBytes);
         ObjectInputStream ois = new ObjectInputStream(bis);
-        return (WrapReturn) ois.readObject();
+        WrapReturn result = (WrapReturn) ois.readObject();
+        ois.close();
+        return result;
     }
 }

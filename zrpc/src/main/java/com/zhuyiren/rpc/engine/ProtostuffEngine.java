@@ -17,9 +17,11 @@
 package com.zhuyiren.rpc.engine;
 
 import com.zhuyiren.rpc.common.WrapReturn;
-import com.zhuyiren.rpc.handler.ArgumentHelper;
+import com.zhuyiren.rpc.handler.ArgumentHolder;
 import io.protostuff.LinkedBuffer;
 import io.protostuff.ProtostuffIOUtil;
+
+import java.lang.reflect.Type;
 
 import static com.zhuyiren.rpc.common.CommonConstant.ARGUMENT_HELPER_SCHEMA;
 import static com.zhuyiren.rpc.common.CommonConstant.WRAP_RETURN_SCHEMA;
@@ -40,25 +42,13 @@ public class ProtostuffEngine extends AbstractEngine implements Engine {
 
 
     @Override
-    public byte[] encodeArgument(Object[] arguments) throws Exception {
-        if (arguments == null) {
-            arguments = new Object[]{};
-        }
-        Class[] classes = new Class[arguments.length];
-        for (int index = 0; index < arguments.length; index++) {
-            classes[index] = arguments[index].getClass();
-        }
-        ArgumentHelper argumentHelper = new ArgumentHelper();
-        argumentHelper.argumentClasses = classes;
-        argumentHelper.arguments = arguments;
-
-        return ProtostuffIOUtil.toByteArray(argumentHelper, ARGUMENT_HELPER_SCHEMA, LinkedBuffer.allocate());
+    public byte[] encodeArgument(ArgumentHolder argumentHolder) throws Exception {
+        return ProtostuffIOUtil.toByteArray(argumentHolder, ARGUMENT_HELPER_SCHEMA, LinkedBuffer.allocate());
     }
 
     @Override
-    public ArgumentHelper decodeArgument(byte[] inBytes) throws Exception {
-
-        ArgumentHelper result = ARGUMENT_HELPER_SCHEMA.newMessage();
+    public ArgumentHolder decodeArgument(byte[] inBytes) throws Exception {
+        ArgumentHolder result = new ArgumentHolder();
         ProtostuffIOUtil.mergeFrom(inBytes, result, ARGUMENT_HELPER_SCHEMA);
         return result;
     }
@@ -69,7 +59,7 @@ public class ProtostuffEngine extends AbstractEngine implements Engine {
     }
 
     @Override
-    public WrapReturn decodeResult(byte[] inBytes) throws Exception {
+    public WrapReturn decodeResult(byte[] inBytes, Type type) throws Exception {
         WrapReturn wrapReturn = new WrapReturn();
         ProtostuffIOUtil.mergeFrom(inBytes, wrapReturn, WRAP_RETURN_SCHEMA);
         return wrapReturn;

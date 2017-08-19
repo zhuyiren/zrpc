@@ -20,6 +20,7 @@ import com.zhuyiren.rpc.Server;
 import com.zhuyiren.rpc.common.PacketDecoder;
 import com.zhuyiren.rpc.common.PacketEncoder;
 import com.zhuyiren.rpc.common.ServerIdleHandler;
+import com.zhuyiren.rpc.engine.JsonEngine;
 import com.zhuyiren.rpc.engine.NormalEngine;
 import com.zhuyiren.rpc.engine.ProtostuffEngine;
 import io.netty.channel.ChannelInitializer;
@@ -93,6 +94,7 @@ public class ServerHandlerInitializer extends ChannelInitializer<SocketChannel> 
         CommonRequestHandlerAdapter commonHandler = new CommonRequestHandlerAdapter();
         commonHandler.addEngine(new NormalEngine());
         commonHandler.addEngine(new ProtostuffEngine());
+        commonHandler.addEngine(new JsonEngine());
         compositeHandler.addHandlerAdapter(commonHandler);
         this.handlerAdapter = compositeHandler;
     }

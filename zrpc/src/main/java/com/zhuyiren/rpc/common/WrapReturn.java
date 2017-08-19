@@ -21,26 +21,26 @@ import java.io.Serializable;
 /**
  * Created by zhuyiren on 2017/8/1.
  */
-public class WrapReturn implements Serializable{
+public class WrapReturn<T> implements Serializable{
 
     private static final long serialVersionUID=1L;
 
 
-    private Object result;
+    private T result;
 
     public WrapReturn(){
 
     }
 
-    public WrapReturn(Object result){
+    public WrapReturn(T result){
         this.result=result;
     }
 
-    public Object getResult() {
+    public T getResult() {
         return result;
     }
 
-    public void setResult(Object result) {
+    public void setResult(T result) {
         this.result = result;
     }
 }

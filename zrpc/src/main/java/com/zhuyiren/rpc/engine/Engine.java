@@ -18,7 +18,9 @@ package com.zhuyiren.rpc.engine;
 
 
 import com.zhuyiren.rpc.common.WrapReturn;
-import com.zhuyiren.rpc.handler.ArgumentHelper;
+import com.zhuyiren.rpc.handler.ArgumentHolder;
+
+import java.lang.reflect.Type;
 
 /**
  * Created by zhuyiren on 2017/6/3.
@@ -28,16 +30,14 @@ public interface Engine {
 
     String getType();
 
+    byte[] encodeArgument(ArgumentHolder argument) throws Exception;
+
+    ArgumentHolder decodeArgument(byte[] inBytes) throws Exception;
 
 
-    byte[] encodeArgument(Object[] arguments) throws Exception;
+    byte[] encodeResult(WrapReturn wrapReturn) throws Exception;
 
-    ArgumentHelper decodeArgument(byte[] inBytes) throws Exception;
-
-
-    byte[] encodeResult(WrapReturn result) throws Exception;
-
-    WrapReturn decodeResult(byte[] inBytes) throws Exception;
+    WrapReturn decodeResult(byte[] inBytes, Type type) throws Exception;
 
 
 

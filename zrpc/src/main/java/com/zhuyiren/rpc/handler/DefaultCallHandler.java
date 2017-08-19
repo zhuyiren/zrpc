@@ -82,6 +82,7 @@ public class DefaultCallHandler implements CallHandler {
                 .handler(clientHandlerInitializer);
     }
 
+  //  private Semaphore semaphore=new Semaphore(100000);
 
     @Override
     public void call(Call call) {
@@ -97,7 +98,7 @@ public class DefaultCallHandler implements CallHandler {
         while (!call.isDone()) {
             call.waitForComplete(TIME_OUT, TimeUnit.MILLISECONDS);
         }
-        calls.remove(call.getRequest().getId());
+
     }
 
     @Override
@@ -129,6 +130,8 @@ public class DefaultCallHandler implements CallHandler {
         call.setResponse(packet);
         call.setException(packet.getException() == null? null : new ExecuteException(packet.getException()));
         call.complete();
+        calls.remove(call.getRequest().getId());
+
     }
 
     @Override

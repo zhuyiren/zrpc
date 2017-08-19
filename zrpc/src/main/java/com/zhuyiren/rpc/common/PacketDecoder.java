@@ -41,5 +41,6 @@ public class PacketDecoder extends ByteToMessageDecoder {
         Packet packet = new Packet();
         packet.readFields(inputStream);
         out.add(packet);
+        inputStream.close();
     }
 }

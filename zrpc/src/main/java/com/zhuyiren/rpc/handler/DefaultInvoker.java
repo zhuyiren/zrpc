@@ -32,8 +32,8 @@ public class DefaultInvoker implements Invoker {
     private String serviceName;
     private Engine engine;
 
-    public DefaultInvoker(String serviceName){
-        this.serviceName=serviceName;
+    public DefaultInvoker(String serviceName) {
+        this.serviceName = serviceName;
     }
 
     public void setCallHandler(CallHandler callHandler) {
@@ -47,20 +47,32 @@ public class DefaultInvoker implements Invoker {
 
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-        byte[] requestEntity = engine.encodeArgument(args);
-        Packet request=new Packet(serviceName,engine.getType(),method.getName(),requestEntity);
-        Call call=new Call(request);
+
+        if (args == null) {
+            args = new Object[]{};
+        }
+        Class<?>[] classes = new Class[args.length];
+        for (int index = 0; index < args.length; index++) {
+            classes[index] = args[index].getClass();
+        }
+        ArgumentHolder argumentHolder = new ArgumentHolder(args, classes);
+
+
+        byte[] requestEntity = engine.encodeArgument(argumentHolder);
+        Packet request = new Packet(serviceName, engine.getType(), method.getName(), requestEntity);
+        Call call = new Call(request);
         callHandler.call(call);
-        if(call.getException()!=null){
+        if (call.getException() != null) {
             throw call.getException();
         }
-        WrapReturn wrapReturn = engine.decodeResult(call.getResponse().getEntity());
+
+        WrapReturn wrapReturn = engine.decodeResult(call.getResponse().getEntity(), method.getGenericReturnType());
         return wrapReturn.getResult();
     }
 
 
     @Override
     public void setEngine(Engine engine) {
-        this.engine=engine;
+        this.engine = engine;
     }
 }

@@ -34,6 +34,7 @@ public class Call {
     private RpcException exception;
     private Thread thread;
 
+
     public Call(Packet request) {
         this(request, null);
     }
@@ -96,4 +97,5 @@ public class Call {
                 ", done=" + done +
                 '}';
     }
+
 }

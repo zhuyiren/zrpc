@@ -35,8 +35,10 @@ public class StatisticsHandler extends ChannelOutboundHandlerAdapter implements 
 
     private AtomicLong count = new AtomicLong();
     private AtomicLong channels = new AtomicLong();
+    private AtomicLong readCount=new AtomicLong();
     private long preCount = 0;
     private long preTime = System.currentTimeMillis();
+    private long preReadCount=0;
     private volatile AtomicBoolean isStart = new AtomicBoolean(false);
 
     public StatisticsHandler() {
@@ -57,9 +59,11 @@ public class StatisticsHandler extends ChannelOutboundHandlerAdapter implements 
             ctx.executor().scheduleWithFixedDelay(() -> {
                 long currentCount = count.get();
                 long currentTime = System.currentTimeMillis();
-                LOGGER.info("Statistics:" + (currentCount - preCount) * 1000 / (currentTime - preTime) + "   Clients:" + channels.get() + "   sum:" + currentCount);
+                long currentReadCount=readCount.get();
+                LOGGER.info("Statistics:" + (currentCount - preCount) * 1000 / (currentTime - preTime) +"-----"+(currentReadCount - preReadCount) * 1000 / (currentTime - preTime)+ "   Clients:" + channels.get() + "   sum:" + currentCount+"---sum:"+readCount.get());
                 preCount = currentCount;
                 preTime = currentTime;
+                preReadCount=currentReadCount;
             }, 1, 1, TimeUnit.SECONDS);
         }
     }
@@ -83,6 +87,7 @@ public class StatisticsHandler extends ChannelOutboundHandlerAdapter implements 
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+        readCount.incrementAndGet();
         ctx.fireChannelRead(msg);
     }
 
