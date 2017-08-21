@@ -20,6 +20,9 @@ package com.zhuyiren.rpc.handler;
 import com.zhuyiren.rpc.common.Packet;
 import com.zhuyiren.rpc.exception.TimeoutException;
 
+import java.net.Socket;
+import java.net.SocketAddress;
+
 /**
  * Created by zhuyiren on 2017/6/3.
  */
@@ -30,7 +33,7 @@ public interface CallHandler {
 
     void ready();
 
-    void connect() throws Exception;
+    void connect(SocketAddress address) throws InterruptedException;
 
     void completeCall(Packet packet);
 
@@ -42,5 +45,11 @@ public interface CallHandler {
 
     void setCallWriter(CallWriter callWriter);
 
+    CallWriter getCallWriter();
+
+    boolean setServiceState(String serviceName,boolean state);
+
+
+    SocketAddress getRemoteAddress();
 
 }

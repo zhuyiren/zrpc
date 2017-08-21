@@ -21,6 +21,7 @@ import com.zhuyiren.rpc.engine.Engine;
 import java.lang.reflect.InvocationHandler;
 
 /**
+ * 代理调用类，一个服务，一个该实例。当代理调用发生的时候，会对数据进行参数化处理。
  * Created by zhuyiren on 2017/6/3.
  */
 public interface Invoker extends InvocationHandler {
@@ -30,7 +31,8 @@ public interface Invoker extends InvocationHandler {
 
     void setServiceName(String serviceName);
 
-
     void setEngine(Engine engine);
+
+
 
 }

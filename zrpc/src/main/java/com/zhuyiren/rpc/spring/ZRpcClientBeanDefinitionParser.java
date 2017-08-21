@@ -43,6 +43,7 @@ public class ZRpcClientBeanDefinitionParser extends AbstractSingleBeanDefinition
     private static final Logger LOGGER= LoggerFactory.getLogger(ZRpcClientBeanDefinitionParser.class);
     private static final String ATTRIBUTE_WORKER_THREAD_COUNT ="workerThreadCount";
     private static final String ATTRIBUTE_USE_ZIP ="useZip";
+    private static final String ATTRIBUTE_ZK_CONNECT_URL="zkConnectUrl";
     private static final String ENGINES_ELEMENT="engines";
 
     private static final String CLIENT_NAME_DEFAULT = "client";
@@ -70,6 +71,11 @@ public class ZRpcClientBeanDefinitionParser extends AbstractSingleBeanDefinition
         }
         builder.addPropertyValue("useZip",useZip);
 
+        String zkConnectUrlAttr = element.getAttribute(ATTRIBUTE_ZK_CONNECT_URL);
+        if(!StringUtils.hasText(zkConnectUrlAttr)){
+            parserContext.getReaderContext().error("The Zookeeper must be configurated",element);
+        }
+        builder.addPropertyValue("zkConnectUrl",zkConnectUrlAttr);
 
         List<Element> enginesElements = DomUtils.getChildElementsByTagName(element, ENGINES_ELEMENT);
         if(enginesElements.size()>1){

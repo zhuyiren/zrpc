@@ -16,7 +16,7 @@
 
 package com.zhuyiren.rpc.spring;
 
-import com.zhuyiren.rpc.Client;
+import com.zhuyiren.rpc.common.Client;
 import com.zhuyiren.rpc.engine.Engine;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.SmartFactoryBean;

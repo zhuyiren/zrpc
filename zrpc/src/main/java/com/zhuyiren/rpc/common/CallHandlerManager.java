@@ -14,16 +14,20 @@
  * limitations under the License.
  */
 
-package com.zhuyiren.rpc.handler;
+package com.zhuyiren.rpc.common;
 
+import com.zhuyiren.rpc.handler.CallHandler;
+
+import java.net.Socket;
+import java.net.SocketAddress;
 
 /**
- * Created by zhuyiren on 2017/6/6.
+ * @author zhuyiren
+ * @date 2017/8/21
  */
-public interface CallWriter {
+public interface CallHandlerManager {
 
+    CallHandler createCaller(SocketAddress address) throws Exception;
 
-    void writeCall(Call call);
-
-    void close();
+    CallHandler removeCaller(CallHandler callHandler);
 }

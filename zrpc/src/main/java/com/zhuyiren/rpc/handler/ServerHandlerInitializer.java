@@ -16,7 +16,7 @@
 
 package com.zhuyiren.rpc.handler;
 
-import com.zhuyiren.rpc.Server;
+import com.zhuyiren.rpc.common.Server;
 import com.zhuyiren.rpc.common.PacketDecoder;
 import com.zhuyiren.rpc.common.PacketEncoder;
 import com.zhuyiren.rpc.common.ServerIdleHandler;
@@ -104,7 +104,6 @@ public class ServerHandlerInitializer extends ChannelInitializer<SocketChannel> 
         Map<String, Object> services = server.getServices(address);
         for (Map.Entry<String, Object> entry : services.entrySet()) {
             requestDispatch.registerService(entry.getKey(), entry.getValue());
-
         }
         return requestDispatch;
     }

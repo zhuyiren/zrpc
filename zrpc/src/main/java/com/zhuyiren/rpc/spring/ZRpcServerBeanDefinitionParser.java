@@ -39,7 +39,9 @@ public class ZRpcServerBeanDefinitionParser extends AbstractSingleBeanDefinition
     private static final String PORT_ATTRIBUTE ="port";
     private static final String ATTRIBUTE_IO_THREAD_SIZE ="ioThreadSize";
     private static final String ATTRIBUTE_USE_ZIP ="useZip";
+    private static final String ATTRIBUTE_ZK_CONNECT_URL="zkConnectUrl";
     private static final String SERVER_NAME_DEFAULT="server";
+
 
 
     @Override
@@ -72,10 +74,16 @@ public class ZRpcServerBeanDefinitionParser extends AbstractSingleBeanDefinition
         }
         builder.addPropertyValue("useZip",useZip);
 
+        String zkConnectUrlAttr = element.getAttribute(ATTRIBUTE_ZK_CONNECT_URL);
+        if(!StringUtils.hasText(zkConnectUrlAttr)){
+            parserContext.getReaderContext().error("The Zookeeper must be configurated",element);
+        }
+
         AbstractBeanDefinition beanDefinition = builder.getBeanDefinition();
         beanDefinition.getPropertyValues().addPropertyValue("host",host);
         beanDefinition.getPropertyValues().addPropertyValue("port",port);
         beanDefinition.getPropertyValues().addPropertyValue("ioThreadSize",ioThreadSize);
+        builder.addPropertyValue("zkConnectUrl",zkConnectUrlAttr);
         beanDefinition.setDestroyMethodName("shutdown");
     }
 

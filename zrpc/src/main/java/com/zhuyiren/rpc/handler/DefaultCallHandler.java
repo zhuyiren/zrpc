@@ -20,6 +20,7 @@ package com.zhuyiren.rpc.handler;
 import com.zhuyiren.rpc.common.Packet;
 import com.zhuyiren.rpc.exception.ExecuteException;
 import com.zhuyiren.rpc.exception.NoConnectException;
+import com.zhuyiren.rpc.exception.RpcServiceNotValidException;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
@@ -30,7 +31,10 @@ import org.slf4j.LoggerFactory;
 import java.net.SocketAddress;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -38,33 +42,33 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class DefaultCallHandler implements CallHandler {
 
-    private static final Logger LOGGER= LoggerFactory.getLogger(DefaultCallHandler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(DefaultCallHandler.class);
 
     private static final int STATE_SHOULD_CONNECTION = 0;
     private static final int STATE_RUNNING = 1;
     private static final int STATE_CLOSED = 2;
     private static final int STATE_CONNECTING = 3;
 
-    private static final int CALL_TIME_OUT = 5000;
-
 
     private final AtomicLong callId;
-    private final ConcurrentHashMap<Long, Call> calls;
+    private final ConcurrentHashMap<Long, Call> callMap;
     private static final int TIME_OUT = 10000;
     private final Object synchronization;
     private volatile int state;
-    private SocketAddress remoteAddress;
-    private EventLoopGroup executors;
-    private Bootstrap bootstrap;
-    private ScheduledExecutorService connectThread;
-    private ClientHandlerInitializer clientHandlerInitializer;
-    private CallWriter callWriter;
+    private volatile SocketAddress remoteAddress;
+    private final EventLoopGroup executors;
+    private final Bootstrap bootstrap;
+    private final ScheduledExecutorService connectThread;
+    private final ClientHandlerInitializer clientHandlerInitializer;
+    private volatile CallWriter callWriter;
+    private final Map<String,Boolean> serviceState;
 
 
-    public DefaultCallHandler(EventLoopGroup executors, ScheduledExecutorService connectThread, SocketAddress remoteAddress,boolean useZip) {
+    public DefaultCallHandler(EventLoopGroup executors, ScheduledExecutorService connectThread, SocketAddress remoteAddress, boolean useZip) {
         callId = new AtomicLong(0);
-        calls = new ConcurrentHashMap<>();
-        clientHandlerInitializer = new ClientHandlerInitializer(this,useZip);
+        callMap = new ConcurrentHashMap<>();
+        serviceState=new ConcurrentHashMap<>();
+        clientHandlerInitializer = new ClientHandlerInitializer(this, useZip);
         synchronization = new Object();
         this.remoteAddress = remoteAddress;
         this.executors = executors;
@@ -72,7 +76,6 @@ public class DefaultCallHandler implements CallHandler {
         this.connectThread = connectThread;
         bootstrap = new Bootstrap();
         configBootstrap();
-
     }
 
     private void configBootstrap() {
@@ -82,18 +85,20 @@ public class DefaultCallHandler implements CallHandler {
                 .handler(clientHandlerInitializer);
     }
 
-  //  private Semaphore semaphore=new Semaphore(100000);
-
     @Override
     public void call(Call call) {
         if (state != STATE_RUNNING) {
             call.setException(new NoConnectException("connect is not ready"));
             return;
         }
+        if(!serviceState.get(call.getRequest().getServiceName())){
+            call.setException(new RpcServiceNotValidException("service is not ready"));
+            return;
+        }
         long currentId = callId.getAndIncrement();
         Packet request = call.getRequest();
         request.setId(currentId);
-        calls.put(currentId, call);
+        callMap.put(currentId, call);
         writeCall(call);
         while (!call.isDone()) {
             call.waitForComplete(TIME_OUT, TimeUnit.MILLISECONDS);
@@ -110,7 +115,8 @@ public class DefaultCallHandler implements CallHandler {
     }
 
     @Override
-    public void connect() throws Exception {
+    public void connect(SocketAddress address) throws InterruptedException {
+        remoteAddress=address;
         bootstrap.connect(remoteAddress).sync();
         synchronized (synchronization) {
             while (state != STATE_RUNNING && !Thread.interrupted()) {
@@ -119,18 +125,17 @@ public class DefaultCallHandler implements CallHandler {
         }
     }
 
-
     @Override
     public void completeCall(Packet packet) {
 
-        Call call = calls.get(packet.getId());
+        Call call = callMap.get(packet.getId());
         if (call == null) {
             return;
         }
         call.setResponse(packet);
-        call.setException(packet.getException() == null? null : new ExecuteException(packet.getException()));
+        call.setException(packet.getException() == null ? null : new ExecuteException(packet.getException()));
         call.complete();
-        calls.remove(call.getRequest().getId());
+        callMap.remove(call.getRequest().getId());
 
     }
 
@@ -139,6 +144,7 @@ public class DefaultCallHandler implements CallHandler {
         synchronized (synchronization) {
             state = STATE_CLOSED;
         }
+        callWriter.close();
     }
 
     @Override
@@ -146,13 +152,13 @@ public class DefaultCallHandler implements CallHandler {
         synchronized (synchronization) {
             if (state == STATE_RUNNING) {
                 state = STATE_CONNECTING;
-                Map<Long, Call> oldCalls = new HashMap<>(calls);
+                Map<Long, Call> oldCalls = new HashMap<>(callMap);
 
                 connectThread.submit(new Runnable() {
                     @Override
                     public void run() {
                         try {
-                            connect();
+                            connect(remoteAddress);
                             for (Map.Entry<Long, Call> entry : oldCalls.entrySet()) {
                                 writeCall(entry.getValue());
                             }
@@ -171,7 +177,46 @@ public class DefaultCallHandler implements CallHandler {
         callWriter.writeCall(call);
     }
 
+    @Override
     public void setCallWriter(CallWriter callWriter) {
         this.callWriter = callWriter;
+    }
+
+    @Override
+    public CallWriter getCallWriter() {
+        return null;
+    }
+
+
+    @Override
+    public boolean setServiceState(String serviceName, boolean state) {
+        serviceState.put(serviceName, state);
+        Boolean removed=true;
+        for (Map.Entry<String, Boolean> entry : serviceState.entrySet()) {
+            if(entry.getValue()==true){
+                removed=false;
+                break;
+            }
+        }
+        return removed;
+    }
+
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof DefaultCallHandler)) return false;
+        DefaultCallHandler that = (DefaultCallHandler) o;
+        return Objects.equals(remoteAddress, that.remoteAddress);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(remoteAddress);
+    }
+
+    @Override
+    public SocketAddress getRemoteAddress() {
+        return remoteAddress;
     }
 }

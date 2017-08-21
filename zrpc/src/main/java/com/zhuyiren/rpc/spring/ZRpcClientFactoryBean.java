@@ -16,8 +16,8 @@
 
 package com.zhuyiren.rpc.spring;
 
-import com.zhuyiren.rpc.Client;
-import com.zhuyiren.rpc.DefaultClient;
+import com.zhuyiren.rpc.common.Client;
+import com.zhuyiren.rpc.common.DefaultClient;
 import com.zhuyiren.rpc.engine.Engine;
 import com.zhuyiren.rpc.engine.NormalEngine;
 import com.zhuyiren.rpc.engine.ProtostuffEngine;
@@ -36,11 +36,12 @@ public class ZRpcClientFactoryBean implements SmartFactoryBean<Client> {
     private int workerThreadCount;
     private boolean useZip;
     private Client client;
+    private String zkConnectUrl;
 
     @Override
     public Client getObject() throws Exception {
 
-        client = new DefaultClient(workerThreadCount,useZip);
+        client = new DefaultClient(zkConnectUrl,workerThreadCount,useZip);
 
         if (engines == null || engines.length == 0) {
             engines = defaultEngines();

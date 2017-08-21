@@ -14,31 +14,21 @@
  * limitations under the License.
  */
 
-package com.zhuyiren.rpc;
+package com.zhuyiren.rpc.common;
 
-import io.netty.util.concurrent.EventExecutorGroup;
+import org.apache.zookeeper.Watcher;
 
 import java.net.SocketAddress;
-import java.util.Map;
 
 /**
- * Created by zhuyiren on 2017/5/18.
+ * @author zhuyiren
+ * @date 2017/8/21
  */
-public interface Server {
+public interface ZkRegister {
 
-    boolean register(String serviceName, Object handler,String host,int port);
-
-    boolean register(String serviceName,Object handler,int port);
-
-    boolean register(String serviceName,Object handler);
-
-    boolean start(SocketAddress address) throws IllegalArgumentException;
+    SocketAddress getData(String path) throws Exception;
 
 
-    boolean shutdown();
-
-    Map<String,Object> getServices(SocketAddress address);
-
-    EventExecutorGroup getBusinessExecutors();
+    SocketAddress getData(String path,Watcher watcher) throws Exception;
 
 }

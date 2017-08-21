@@ -16,8 +16,8 @@
 
 package com.zhuyiren.rpc.spring;
 
-import com.zhuyiren.rpc.DefaultServer;
-import com.zhuyiren.rpc.Server;
+import com.zhuyiren.rpc.common.DefaultServer;
+import com.zhuyiren.rpc.common.Server;
 import org.springframework.beans.factory.SmartFactoryBean;
 
 /**
@@ -27,6 +27,7 @@ import org.springframework.beans.factory.SmartFactoryBean;
 public class ZRpcServerFactoryBean implements SmartFactoryBean<Server> {
 
     private String host;
+    private String zkConnectUrl;
     private int port;
     private int ioThreadSize;
     private Server server;
@@ -34,7 +35,7 @@ public class ZRpcServerFactoryBean implements SmartFactoryBean<Server> {
 
     @Override
     public Server getObject() throws Exception {
-        Server server=new DefaultServer(host,port,ioThreadSize,useZip);
+        Server server=new DefaultServer(zkConnectUrl,host,port,ioThreadSize,useZip);
         this.server=server;
         return server;
     }
@@ -96,5 +97,14 @@ public class ZRpcServerFactoryBean implements SmartFactoryBean<Server> {
 
     public void setUseZip(boolean useZip) {
         this.useZip = useZip;
+    }
+
+
+    public String getZkConnectUrl() {
+        return zkConnectUrl;
+    }
+
+    public void setZkConnectUrl(String zkConnectUrl) {
+        this.zkConnectUrl = zkConnectUrl;
     }
 }

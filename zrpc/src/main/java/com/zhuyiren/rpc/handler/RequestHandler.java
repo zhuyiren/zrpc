@@ -50,6 +50,11 @@ public class RequestHandler extends ChannelInboundHandlerAdapter implements Call
     }
 
     @Override
+    public void close() {
+        context.close();
+    }
+
+    @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         context = ctx;
         callHandler.ready();
@@ -72,7 +77,6 @@ public class RequestHandler extends ChannelInboundHandlerAdapter implements Call
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         ctx.fireExceptionCaught(cause);
-
     }
 
 

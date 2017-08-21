@@ -14,16 +14,30 @@
  * limitations under the License.
  */
 
-package com.zhuyiren.rpc.handler;
+package com.zhuyiren.rpc.common;
 
+import io.netty.util.concurrent.EventExecutorGroup;
+
+import java.net.SocketAddress;
+import java.util.Map;
 
 /**
- * Created by zhuyiren on 2017/6/6.
+ * Created by zhuyiren on 2017/5/18.
  */
-public interface CallWriter {
+public interface Server {
 
+    boolean register(String serviceName, Object handler,String host,int port);
 
-    void writeCall(Call call);
+    boolean register(String serviceName,Object handler,int port);
 
-    void close();
+    boolean register(String serviceName,Object handler);
+
+    boolean start(SocketAddress address) throws IllegalArgumentException;
+
+    boolean shutdown();
+
+    Map<String,Object> getServices(SocketAddress address);
+
+    EventExecutorGroup getBusinessExecutors();
+
 }

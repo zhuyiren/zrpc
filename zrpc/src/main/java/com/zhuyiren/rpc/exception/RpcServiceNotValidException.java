@@ -14,16 +14,14 @@
  * limitations under the License.
  */
 
-package com.zhuyiren.rpc.handler;
-
+package com.zhuyiren.rpc.exception;
 
 /**
- * Created by zhuyiren on 2017/6/6.
+ * @author zhuyiren
+ * @date 2017/8/21
  */
-public interface CallWriter {
-
-
-    void writeCall(Call call);
-
-    void close();
+public class RpcServiceNotValidException extends RpcException {
+    public RpcServiceNotValidException(String msg) {
+        super(msg);
+    }
 }

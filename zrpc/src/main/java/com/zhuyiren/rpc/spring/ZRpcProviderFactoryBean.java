@@ -16,7 +16,7 @@
 
 package com.zhuyiren.rpc.spring;
 
-import com.zhuyiren.rpc.Server;
+import com.zhuyiren.rpc.common.Server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;

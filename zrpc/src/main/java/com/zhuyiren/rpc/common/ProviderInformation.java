@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.zhuyiren.rpc;
+package com.zhuyiren.rpc.common;
 
 import java.net.SocketAddress;
 import java.util.HashMap;

@@ -64,6 +64,7 @@
             </xsd:simpleType>
         </xsd:attribute>
         <xsd:attribute name="useZip" type="xsd:boolean"/>
+        <xsd:attribute name="zkConnectUrl" type="xsd:string" use="required"/>
     </xsd:attributeGroup>
 
 
@@ -110,6 +111,7 @@
         <xsd:attribute name="host" default="0.0.0.0" type="xsd:string"/>
         <xsd:attribute name="ioThreadSize" type="xsd:positiveInteger"/>
         <xsd:attribute name="useZip" type="xsd:boolean"/>
+        <xsd:attribute name="zkConnectUrl" type="xsd:string" use="required"/>
     </xsd:attributeGroup>
 
     

@@ -21,6 +21,8 @@ import com.zhuyiren.rpc.common.WrapReturn;
 import com.zhuyiren.rpc.engine.Engine;
 
 import java.lang.reflect.Method;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by zhuyiren on 2017/8/4.
@@ -31,9 +33,11 @@ public class DefaultInvoker implements Invoker {
     private CallHandler callHandler;
     private String serviceName;
     private Engine engine;
+    private Map<Method,Class[]> methodMap;
 
     public DefaultInvoker(String serviceName) {
         this.serviceName = serviceName;
+        methodMap=new ConcurrentHashMap<>();
     }
 
     public void setCallHandler(CallHandler callHandler) {
@@ -48,16 +52,20 @@ public class DefaultInvoker implements Invoker {
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 
+        final Object[] realArgument;
         if (args == null) {
-            args = new Object[]{};
+            realArgument = new Object[]{};
+        }else {
+            realArgument=args;
         }
-        Class<?>[] classes = new Class[args.length];
-        for (int index = 0; index < args.length; index++) {
-            classes[index] = args[index].getClass();
-        }
+        Class<?>[] classes = methodMap.computeIfAbsent(method,key->{
+            Class[] cacheClass = new Class[realArgument.length];
+            for (int index = 0; index < realArgument.length; index++) {
+                cacheClass[index] = realArgument[index].getClass();
+            }
+            return cacheClass;
+        });
         ArgumentHolder argumentHolder = new ArgumentHolder(args, classes);
-
-
         byte[] requestEntity = engine.encodeArgument(argumentHolder);
         Packet request = new Packet(serviceName, engine.getType(), method.getName(), requestEntity);
         Call call = new Call(request);
