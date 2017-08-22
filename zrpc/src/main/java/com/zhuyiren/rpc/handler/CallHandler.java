@@ -45,8 +45,6 @@ public interface CallHandler {
 
     void setCallWriter(CallWriter callWriter);
 
-    CallWriter getCallWriter();
-
     boolean setServiceState(String serviceName,boolean state);
 
 

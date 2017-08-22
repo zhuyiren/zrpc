@@ -174,19 +174,13 @@ public class DefaultCallHandler implements CallHandler {
 
     @Override
     public void writeCall(Call call) {
-        callWriter.writeCall(call);
+        callWriter.writeRequestPacket(call.getRequest());
     }
 
     @Override
     public void setCallWriter(CallWriter callWriter) {
         this.callWriter = callWriter;
     }
-
-    @Override
-    public CallWriter getCallWriter() {
-        return null;
-    }
-
 
     @Override
     public boolean setServiceState(String serviceName, boolean state) {
@@ -219,4 +213,7 @@ public class DefaultCallHandler implements CallHandler {
     public SocketAddress getRemoteAddress() {
         return remoteAddress;
     }
+
+
+
 }

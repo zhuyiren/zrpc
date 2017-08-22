@@ -22,13 +22,14 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.SmartFactoryBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.util.StringUtils;
 
 import java.net.InetSocketAddress;
 
 /**
  * Created by zhuyiren on 2017/8/2.
  */
-public class ZRpcServiceFactoryBean implements SmartFactoryBean,ApplicationContextAware{
+public class ZRpcServiceFactoryBean implements SmartFactoryBean, ApplicationContextAware {
 
 
     private Class<?> ifcCls;
@@ -44,21 +45,27 @@ public class ZRpcServiceFactoryBean implements SmartFactoryBean,ApplicationConte
 
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        this.context=applicationContext;
+        this.context = applicationContext;
     }
 
     @Override
     public Object getObject() throws Exception {
-        InetSocketAddress address = new InetSocketAddress(host, port);
-        if(client==null){
-            this.client=context.getBean(Client.class);
+        InetSocketAddress address;
+        if (!StringUtils.hasText(host)) {
+            address = null;
+        } else {
+            address = new InetSocketAddress(host, port);
         }
-        return client.exportService(engine, ifcCls,serviceName, address, cache);
+
+        if (client == null) {
+            this.client = context.getBean(Client.class);
+        }
+        return client.exportService(engine, ifcCls, serviceName, address, cache);
     }
 
     @Override
     public Class<?> getObjectType() {
-        if(ifcCls==null){
+        if (ifcCls == null) {
             return null;
         }
         return ifcCls;

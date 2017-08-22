@@ -70,7 +70,7 @@
 
     <xsd:attributeGroup name="serviceAttributes">
         <xsd:attribute name="interface" type="xsd:string" use="required"/>
-        <xsd:attribute name="host" type="xsd:string" use="required"/>
+        <xsd:attribute name="host" type="xsd:string"/>
         <xsd:attribute name="engineType" type="xsd:string"/>
         <xsd:attribute name="cached" type="xsd:boolean" default="false"/>
         <xsd:attribute name="serviceName" type="xsd:string"/>

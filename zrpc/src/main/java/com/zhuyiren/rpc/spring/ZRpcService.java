@@ -25,7 +25,7 @@ public @interface ZRpcService {
 
     Class<? extends Engine> engine() default com.zhuyiren.rpc.engine.ProtostuffEngine.class;
 
-    String host();
+    String host() default "";
 
     int port() default 3324;
 

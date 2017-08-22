@@ -190,19 +190,13 @@ public class DefaultServer implements Server {
         if (!(address instanceof InetSocketAddress)) {
             throw new IllegalArgumentException("address must be InetSocketAddress");
         }
-        StringBuilder sb = new StringBuilder();
-        String[] split = serviceName.split("\\.");
-        for (int index = 0; index < split.length - 1; index++) {
-            sb.append(split[index]).append("/");
-        }
-        sb.append(split[split.length - 1]);
-        String path = "/" + sb.toString();
+        String path="/"+serviceName.replaceAll("\\.","/");
 
 
         InetSocketAddress realAddress = (InetSocketAddress) address;
         String hostString = realAddress.getHostString();
         int port = realAddress.getPort();
-        sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder();
         sb.append(hostString).append(":").append(port);
         sb.append(":").append("0");
 

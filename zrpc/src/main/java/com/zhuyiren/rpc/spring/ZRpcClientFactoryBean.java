@@ -106,6 +106,14 @@ public class ZRpcClientFactoryBean implements SmartFactoryBean<Client> {
         this.useZip = useZip;
     }
 
+    public String getZkConnectUrl() {
+        return zkConnectUrl;
+    }
+
+    public void setZkConnectUrl(String zkConnectUrl) {
+        this.zkConnectUrl = zkConnectUrl;
+    }
+
     private Engine[] defaultEngines() {
         List<Engine> engines = new ArrayList<>();
         engines.add(new NormalEngine());

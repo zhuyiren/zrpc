@@ -30,7 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class DefaultInvoker implements Invoker {
 
 
-    private CallHandler callHandler;
+    private volatile CallHandler callHandler;
     private String serviceName;
     private Engine engine;
     private Map<Method,Class[]> methodMap;

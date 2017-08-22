@@ -17,13 +17,17 @@
 package com.zhuyiren.rpc.handler;
 
 
+import com.zhuyiren.rpc.common.Packet;
+
 /**
  * Created by zhuyiren on 2017/6/6.
  */
 public interface CallWriter {
 
 
-    void writeCall(Call call);
+    void writeRequestPacket(Packet request);
 
     void close();
+
+    void resolveResponse(Packet response);
 }

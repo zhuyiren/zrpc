@@ -26,9 +26,9 @@ import java.net.SocketAddress;
  */
 public interface ZkRegister {
 
-    SocketAddress getData(String path) throws Exception;
+    SocketAddress getChangedAddress(String serviceName) throws Exception;
 
 
-    SocketAddress getData(String path,Watcher watcher) throws Exception;
+    boolean watchService(String serviceName);
 
 }

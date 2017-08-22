@@ -79,12 +79,23 @@ public class Call {
     }
 
     public void waitForComplete(int timeout, TimeUnit unit) {
-
         thread = Thread.currentThread();
-        LockSupport.parkNanos(unit.toNanos(timeout));
+        long waitTime = unit.toNanos(timeout);
+        long startTime=System.nanoTime();
+        long duration=0;
+        while (true){
+            LockSupport.parkNanos(waitTime-duration);
+            if(done==true){
+                break;
+            }
+            duration=System.nanoTime()-startTime;
+            if(duration>=waitTime){
+                break;
+            }
+        }
         if (response == null) {
             exception = new TimeoutException("Time out");
-            done = true;
+            done=true;
         }
     }
 

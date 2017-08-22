@@ -18,7 +18,6 @@ package com.zhuyiren.rpc.handler;
 
 
 import com.zhuyiren.rpc.common.Packet;
-import com.zhuyiren.rpc.exception.ExecuteException;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 
@@ -40,18 +39,25 @@ public class RequestHandler extends ChannelInboundHandlerAdapter implements Call
     }
 
 
-    public void writeCall(Call call) {
-        context.writeAndFlush(call.getRequest()).addListener(future -> {
+    public void writeRequestPacket(Packet request) {
+        context.writeAndFlush(request).addListener(future -> {
             if(future.cause()!=null){
-                call.getRequest().setException(future.cause().getMessage());
-                callHandler.completeCall(call.getRequest());
+                request.setException(future.cause().getMessage());
+                resolveResponse(request);
             }
         });
     }
 
     @Override
     public void close() {
-        context.close();
+        if(context!=null) {
+            context.close();
+        }
+    }
+
+    @Override
+    public void resolveResponse(Packet response) {
+        callHandler.completeCall(response);
     }
 
     @Override
@@ -63,7 +69,7 @@ public class RequestHandler extends ChannelInboundHandlerAdapter implements Call
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         Packet response = (Packet) msg;
-        callHandler.completeCall(response);
+        resolveResponse(response);
     }
 
 
