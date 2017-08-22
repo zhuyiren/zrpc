@@ -65,9 +65,10 @@ public class DefaultServer implements Server {
     private int port;
     private String zkConnectUrl;
     private CuratorFramework zkClient;
+    private String zkNamespace;
 
 
-    public DefaultServer(String zkConnectUrl, String host, int port, int ioThreadSize, boolean useZip) {
+    public DefaultServer(String zkConnectUrl,String namespace, String host, int port, int ioThreadSize, boolean useZip) {
         LOGGER.debug("Io thread size:" + ioThreadSize + ",businessExecutors thread size:" + ioThreadSize);
         nioExecutors = new NioEventLoopGroup(ioThreadSize);
         businessExecutors = new DefaultEventExecutorGroup(ioThreadSize);
@@ -76,24 +77,28 @@ public class DefaultServer implements Server {
         this.host = host;
         this.port = port;
         this.zkConnectUrl = zkConnectUrl;
-        zkClient= CuratorFrameworkFactory.newClient(zkConnectUrl,new RetryNTimes(10,5000));
+        this.zkNamespace=namespace;
+        zkClient= CuratorFrameworkFactory.builder()
+                .connectString(zkConnectUrl)
+                .retryPolicy(new RetryNTimes(10,5000))
+                .namespace(zkNamespace).build();
         zkClient.start();
         LOGGER.debug("Connect to zookeeper successfully");
     }
 
 
-    public DefaultServer(String zkConnectUrl) {
-        this(zkConnectUrl, false);
+    public DefaultServer(String zkConnectUrl,String zkNamespace) {
+        this(zkConnectUrl, zkNamespace,false);
     }
 
 
-    public DefaultServer(String zkConnectUrl, boolean useZip) {
-        this(zkConnectUrl, DEFAULT_IO_THREAD_SIZE, useZip);
+    public DefaultServer(String zkConnectUrl,String zkNamespace, boolean useZip) {
+        this(zkConnectUrl, zkNamespace,DEFAULT_IO_THREAD_SIZE, useZip);
     }
 
 
-    public DefaultServer(String zkConnectUrl, int ioThreadSize, boolean useZip) {
-        this(zkConnectUrl, DEFAULT_HOST, DEFAULT_PORT, ioThreadSize, useZip);
+    public DefaultServer(String zkConnectUrl,String zkNamespace, int ioThreadSize, boolean useZip) {
+        this(zkConnectUrl,zkNamespace, DEFAULT_HOST, DEFAULT_PORT, ioThreadSize, useZip);
     }
 
     private void initServerBootstrap() {

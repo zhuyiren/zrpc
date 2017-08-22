@@ -37,11 +37,12 @@ public class ZRpcClientFactoryBean implements SmartFactoryBean<Client> {
     private boolean useZip;
     private Client client;
     private String zkConnectUrl;
+    private String zkNamespace;
 
     @Override
     public Client getObject() throws Exception {
 
-        client = new DefaultClient(zkConnectUrl,workerThreadCount,useZip);
+        client = new DefaultClient(zkConnectUrl,zkNamespace,workerThreadCount,useZip);
 
         if (engines == null || engines.length == 0) {
             engines = defaultEngines();
@@ -49,7 +50,6 @@ public class ZRpcClientFactoryBean implements SmartFactoryBean<Client> {
         for (Engine engine : engines) {
             client.addEngine(engine);
         }
-        this.client = client;
         return client;
     }
 
@@ -112,6 +112,14 @@ public class ZRpcClientFactoryBean implements SmartFactoryBean<Client> {
 
     public void setZkConnectUrl(String zkConnectUrl) {
         this.zkConnectUrl = zkConnectUrl;
+    }
+
+    public String getZkNamespace() {
+        return zkNamespace;
+    }
+
+    public void setZkNamespace(String zkNamespace) {
+        this.zkNamespace = zkNamespace;
     }
 
     private Engine[] defaultEngines() {

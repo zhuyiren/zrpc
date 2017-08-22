@@ -32,10 +32,11 @@ public class ZRpcServerFactoryBean implements SmartFactoryBean<Server> {
     private int ioThreadSize;
     private Server server;
     private boolean useZip;
+    private String zkNamespace;
 
     @Override
     public Server getObject() throws Exception {
-        Server server=new DefaultServer(zkConnectUrl,host,port,ioThreadSize,useZip);
+        Server server=new DefaultServer(zkConnectUrl,zkNamespace,host,port,ioThreadSize,useZip);
         this.server=server;
         return server;
     }
@@ -106,5 +107,14 @@ public class ZRpcServerFactoryBean implements SmartFactoryBean<Server> {
 
     public void setZkConnectUrl(String zkConnectUrl) {
         this.zkConnectUrl = zkConnectUrl;
+    }
+
+
+    public String getZkNamespace() {
+        return zkNamespace;
+    }
+
+    public void setZkNamespace(String zkNamespace) {
+        this.zkNamespace = zkNamespace;
     }
 }

@@ -45,6 +45,7 @@ public class ZRpcClientBeanDefinitionParser extends AbstractSingleBeanDefinition
     private static final String ATTRIBUTE_USE_ZIP ="useZip";
     private static final String ATTRIBUTE_ZK_CONNECT_URL="zkConnectUrl";
     private static final String ENGINES_ELEMENT="engines";
+    private static final String ATTRIBUTE_ZK_NAMESPACE="zkNamespace";
 
     private static final String CLIENT_NAME_DEFAULT = "client";
 
@@ -76,6 +77,9 @@ public class ZRpcClientBeanDefinitionParser extends AbstractSingleBeanDefinition
             parserContext.getReaderContext().error("The Zookeeper must be configurated",element);
         }
         builder.addPropertyValue("zkConnectUrl",zkConnectUrlAttr);
+
+        String zkNamespaceAttr=element.getAttribute(ATTRIBUTE_ZK_NAMESPACE);
+        builder.addPropertyValue("zkNamespace",zkNamespaceAttr);
 
         List<Element> enginesElements = DomUtils.getChildElementsByTagName(element, ENGINES_ELEMENT);
         if(enginesElements.size()>1){

@@ -41,6 +41,7 @@ public class ZRpcServerBeanDefinitionParser extends AbstractSingleBeanDefinition
     private static final String ATTRIBUTE_USE_ZIP ="useZip";
     private static final String ATTRIBUTE_ZK_CONNECT_URL="zkConnectUrl";
     private static final String SERVER_NAME_DEFAULT="server";
+    private static final String ATTRIBUTE_ZK_NAMESPACE="zkNamespace";
 
 
 
@@ -65,6 +66,8 @@ public class ZRpcServerBeanDefinitionParser extends AbstractSingleBeanDefinition
                 LOGGER.warn("The io thread size is not a number,and will set be default");
             }
         }
+
+
         String useZipAttr=element.getAttribute(ATTRIBUTE_USE_ZIP);
         boolean useZip=false;
         try {
@@ -76,11 +79,15 @@ public class ZRpcServerBeanDefinitionParser extends AbstractSingleBeanDefinition
 
         String zkConnectUrlAttr = element.getAttribute(ATTRIBUTE_ZK_CONNECT_URL);
         if(!StringUtils.hasText(zkConnectUrlAttr)){
-            parserContext.getReaderContext().error("The Zookeeper must be configurated",element);
+            parserContext.getReaderContext().error("The Zookeeper connect's url must be set",element);
         }
+
+        String zkNamespaceAttr=element.getAttribute(ATTRIBUTE_ZK_NAMESPACE);
+
 
         AbstractBeanDefinition beanDefinition = builder.getBeanDefinition();
         beanDefinition.getPropertyValues().addPropertyValue("host",host);
+        beanDefinition.getPropertyValues().addPropertyValue("zkNamespace",zkNamespaceAttr);
         beanDefinition.getPropertyValues().addPropertyValue("port",port);
         beanDefinition.getPropertyValues().addPropertyValue("ioThreadSize",ioThreadSize);
         builder.addPropertyValue("zkConnectUrl",zkConnectUrlAttr);

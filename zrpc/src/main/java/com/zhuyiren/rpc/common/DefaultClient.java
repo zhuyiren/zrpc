@@ -58,6 +58,7 @@ public class DefaultClient implements Client, ZkRegister, CallHandlerManager {
     private CuratorFramework zkClient;
     private String zkConnectUrl;
     private boolean useZip;
+    private String zkNamespace;
 
 
     private PathChildrenCacheListener watcher=new PathChildrenCacheListener() {
@@ -108,11 +109,11 @@ public class DefaultClient implements Client, ZkRegister, CallHandlerManager {
     };
 
 
-    public DefaultClient(String zkConnectUrl, int threadSize) {
-        this(zkConnectUrl, threadSize, false);
+    public DefaultClient(String zkConnectUrl, String zkNamespace, int threadSize) {
+        this(zkConnectUrl, zkNamespace, threadSize, false);
     }
 
-    public DefaultClient(String zkConnectUrl, int threadSize, boolean useZip) {
+    public DefaultClient(String zkConnectUrl, String zkNamespace, int threadSize, boolean useZip) {
         engines = new ArrayList<>();
         callerMap = new ConcurrentHashMap<>();
         zkServiceMap = new ConcurrentHashMap<>();
@@ -123,7 +124,10 @@ public class DefaultClient implements Client, ZkRegister, CallHandlerManager {
         connectThread = Executors.newScheduledThreadPool(1);
         this.useZip = useZip;
         this.zkConnectUrl = zkConnectUrl;
-        zkClient = CuratorFrameworkFactory.newClient(this.zkConnectUrl, new RetryNTimes(10, 5000));
+        this.zkNamespace = zkNamespace;
+        zkClient = CuratorFrameworkFactory.builder()
+                .connectString(zkConnectUrl).retryPolicy(new RetryNTimes(10,5000))
+                .namespace(zkNamespace).build();
         zkClient.start();
     }
 
