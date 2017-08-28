@@ -36,21 +36,21 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+
+import static com.zhuyiren.rpc.common.CommonConstant.ANY_HOST;
 
 /**
  * Created by zhuyiren on 2017/6/3.
  */
-public class DefaultClient implements Client, ZkRegister, CallHandlerManager {
+public class DefaultClient implements Client, ServiceManage, CallHandlerManager {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultClient.class);
 
     private List<Engine> engines;
     private Map<SocketAddress, CallHandler> callerMap;
-    private List<CallHandler> callHandlers;
-    private Map<String, CallHandler> zkServiceMap;
+    private Map<String, ServiceInformation> serviceInfoMaps;
     private Map<String, Invoker> invokerMap;
 
     private NioEventLoopGroup eventExecutors;
@@ -61,48 +61,55 @@ public class DefaultClient implements Client, ZkRegister, CallHandlerManager {
     private String zkNamespace;
 
 
-    private PathChildrenCacheListener watcher=new PathChildrenCacheListener() {
+    private PathChildrenCacheListener watcher = new PathChildrenCacheListener() {
         @Override
-        public synchronized void childEvent(CuratorFramework curatorFramework, PathChildrenCacheEvent pathChildrenCacheEvent) throws Exception {
-            if(pathChildrenCacheEvent.getData()==null){
-                return;
-            }
-
-            String childPath = pathChildrenCacheEvent.getData().getPath();
-            String path=childPath.substring(0,childPath.lastIndexOf("/"));
-            String serviceName = path.substring(1).replaceAll("/", "\\.");
-            try {
-                CallHandler originalCaller = zkServiceMap.get(serviceName);
-                if (originalCaller == null) {
+        public void childEvent(CuratorFramework curatorFramework, PathChildrenCacheEvent pathChildrenCacheEvent) throws Exception {
+            synchronized (DefaultClient.this){
+                if (pathChildrenCacheEvent.getData() == null) {
                     return;
                 }
-                SocketAddress originalAddress=originalCaller.getRemoteAddress();
-                SocketAddress newAddress= getChangedAddress(serviceName);
+                String childPath = pathChildrenCacheEvent.getData().getPath();
+                String serviceName = getServiceByPath(childPath);
 
-                LOGGER.debug("The service:[" + serviceName + "] is changed,the new address:[" + newAddress + "]");
-
-                if(originalAddress.equals(newAddress)){
-                    return;
-                }
-
-                CallHandler findCaller = null;
-                if (newAddress == null || (findCaller = callerMap.get(newAddress)) != null) {
-                    boolean shouldRemove = originalCaller.setServiceState(serviceName, false);
-                    if (shouldRemove) {
-                        removeCaller(originalCaller);
+                try {
+                    ServiceInformation serviceInfo = serviceInfoMaps.get(serviceName);
+                    if (serviceInfo==null || !serviceInfo.isManageByZookeeper) {
+                        return;
                     }
-                    if (findCaller != null) {
-                        invokerMap.get(serviceName).setCallHandler(findCaller);
-                        findCaller.setServiceState(serviceName, true);
+                    SocketAddress oldAddress = serviceInfo.address;
+                    SocketAddress newAddress = getChangedAddress(serviceName);
+
+                    LOGGER.debug("The service:[" + serviceName + "] is changed,the new address:[" + newAddress + "]");
+
+                    CallHandler oldCaller;
+                    CallHandler newCaller;
+
+                    if(newAddress==null){
+                        oldCaller=callerMap.get(oldAddress);
+                        if(oldCaller!=null){
+                            if (oldCaller.setServiceState(serviceName,false)) {
+                                removeCaller(oldCaller);
+                            }
+                        }
+                        serviceInfoMaps.put(serviceName,new ServiceInformation(serviceName,true,newAddress));
+                        return;
                     }
-                    return;
+                    newCaller=callerMap.get(newAddress);
+                    oldCaller=callerMap.get(oldAddress);
+                    if(newCaller==null){
+                        newCaller=createCaller(newAddress);
+                    }
+                    newCaller.setServiceState(serviceName,true);
+                    serviceInfoMaps.put(serviceName,new ServiceInformation(serviceName,true,newAddress));
+                    invokerMap.get(serviceName).setCallHandler(newCaller);
+                    if(!newCaller.equals(oldCaller)){
+                        if (oldCaller.setServiceState(serviceName,false)) {
+                            removeCaller(oldCaller);
+                        }
+                    }
+                } catch (Exception e) {
+                    LOGGER.error(e.getMessage(), e);
                 }
-                CallHandler newCaller = createCaller(newAddress);
-                newCaller.setServiceState(serviceName,true);
-                invokerMap.get(serviceName).setCallHandler(newCaller);
-                zkServiceMap.put(serviceName,newCaller);
-            } catch (Exception e) {
-                LOGGER.error(e.getMessage(), e);
             }
         }
 
@@ -116,8 +123,7 @@ public class DefaultClient implements Client, ZkRegister, CallHandlerManager {
     public DefaultClient(String zkConnectUrl, String zkNamespace, int threadSize, boolean useZip) {
         engines = new ArrayList<>();
         callerMap = new ConcurrentHashMap<>();
-        zkServiceMap = new ConcurrentHashMap<>();
-        callHandlers = new CopyOnWriteArrayList<>();
+        serviceInfoMaps=new ConcurrentHashMap<>();
         invokerMap = new ConcurrentHashMap<>();
         eventExecutors = threadSize == 0 ? new NioEventLoopGroup() : new NioEventLoopGroup(threadSize);
         LOGGER.debug("io thread size:" + eventExecutors.executorCount());
@@ -126,20 +132,26 @@ public class DefaultClient implements Client, ZkRegister, CallHandlerManager {
         this.zkConnectUrl = zkConnectUrl;
         this.zkNamespace = zkNamespace;
         zkClient = CuratorFrameworkFactory.builder()
-                .connectString(zkConnectUrl).retryPolicy(new RetryNTimes(10,5000))
-                .namespace(zkNamespace).build();
+                .connectString(this.zkConnectUrl).retryPolicy(new RetryNTimes(10, 5000))
+                .namespace(this.zkNamespace).build();
         zkClient.start();
     }
 
 
     @Override
-    public <T> T exportService(Class<? extends Engine> engineType, Class<T> service, SocketAddress address, boolean useCache) throws Exception {
-        return exportService(engineType, service, service.getCanonicalName(), address, useCache);
+    public synchronized <T> T exportService(Class<? extends Engine> engineType, Class<T> service, SocketAddress address ) throws Exception {
+        return exportService(engineType, service, service.getCanonicalName(), address);
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public synchronized <T> T exportService(Class<? extends Engine> engineType, Class<T> service, String serviceName, SocketAddress address, boolean useCache) throws Exception {
+    public synchronized <T> T exportService(Class<? extends Engine> engineType, Class<T> service, String serviceName, SocketAddress address ) throws Exception {
+
+        if (address != null && address instanceof InetSocketAddress) {
+            if (ANY_HOST.equals(((InetSocketAddress) address).getAddress().getHostAddress())) {
+                throw new IllegalArgumentException("The address must not be 0.0.0.0");
+            }
+        }
         Engine engine = findEngineByType(engineType);
         if (engine == null) {
             engine = addEngineByClass(engineType);
@@ -152,23 +164,23 @@ public class DefaultClient implements Client, ZkRegister, CallHandlerManager {
         if (address == null) {
             isZkManage = true;
             address = getChangedAddress(serviceName);
-            watchService(serviceName);
         }
+        ServiceInformation serviceInfo = new ServiceInformation(serviceName, isZkManage, address);
+        serviceInfoMaps.put(serviceName, serviceInfo);
 
-        CallHandler callHandler = null;
-        if (useCache) {
-            callHandler = callerMap.get(address);
-        }
+
+        CallHandler callHandler=callerMap.get(address);
         if (callHandler == null) {
             callHandler = createCaller(address);
-            callHandler.setServiceState(serviceName, true);
         }
+        callHandler.setServiceState(serviceName, true);
         invoker.setCallHandler(callHandler);
-        if (isZkManage) {
-            zkServiceMap.put(serviceName, callHandler);
-        }
         invokerMap.put(serviceName, invoker);
         Object o = Proxy.newProxyInstance(Engine.class.getClassLoader(), new Class[]{service}, invoker);
+
+        if(serviceInfo.isManageByZookeeper){
+            watchService(serviceName);
+        }
         return (T) o;
     }
 
@@ -187,7 +199,6 @@ public class DefaultClient implements Client, ZkRegister, CallHandlerManager {
         CallHandler callHandler = new DefaultCallHandler(eventExecutors, connectThread, address, useZip);
         callHandler.connect(address);
         callerMap.putIfAbsent(address, callHandler);
-        callHandlers.add(callHandler);
         return callHandler;
     }
 
@@ -195,9 +206,7 @@ public class DefaultClient implements Client, ZkRegister, CallHandlerManager {
     public CallHandler removeCaller(CallHandler callHandler) {
         SocketAddress remoteAddress = callHandler.getRemoteAddress();
         callerMap.remove(remoteAddress);
-        callHandlers.remove(callHandler);
         callHandler.shutdown();
-
         return callHandler;
 
     }
@@ -207,8 +216,8 @@ public class DefaultClient implements Client, ZkRegister, CallHandlerManager {
      */
     @Override
     public void shutdown() {
-        for (CallHandler callHandler : callHandlers) {
-            callHandler.shutdown();
+        for (Map.Entry<SocketAddress, CallHandler> entry : callerMap.entrySet()) {
+            entry.getValue().shutdown();
         }
         eventExecutors.shutdownGracefully();
         connectThread.shutdownNow();
@@ -234,14 +243,14 @@ public class DefaultClient implements Client, ZkRegister, CallHandlerManager {
 
     @Override
     public boolean watchService(String serviceName) {
-        String path="/"+serviceName.replaceAll("\\.","/");
+        String path = "/" + serviceName.replaceAll("\\.", "/");
         PathChildrenCache cache = new PathChildrenCache(zkClient, path, true);
-        cache.getListenable().addListener(watcher );
+        cache.getListenable().addListener(watcher);
         try {
             cache.start();
             return true;
         } catch (Exception e) {
-            LOGGER.error(e.getMessage(),e);
+            LOGGER.error(e.getMessage(), e);
             return false;
         }
 
@@ -273,5 +282,38 @@ public class DefaultClient implements Client, ZkRegister, CallHandlerManager {
         int portIndex = targetConfig.indexOf(":", hostIndex + 1);
         int port = Integer.parseInt(targetConfig.substring(hostIndex + 1, portIndex));
         return new InetSocketAddress(host, port);
+    }
+
+
+    private String getServiceByPath(String fullPath){
+        String parentPath = fullPath.substring(0, fullPath.lastIndexOf("/"));
+        String serviceName = parentPath.substring(1).replaceAll("/", "\\.");
+        return serviceName;
+    }
+
+    private final static class ServiceInformation {
+        private final String serviceName;
+        private final boolean isManageByZookeeper;
+        private final SocketAddress address;
+
+        public ServiceInformation(String serviceName, boolean isManageByZookeeper, SocketAddress address) {
+            this.serviceName = serviceName;
+            this.isManageByZookeeper = isManageByZookeeper;
+            this.address = address;
+        }
+
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof ServiceInformation)) return false;
+            ServiceInformation that = (ServiceInformation) o;
+            return Objects.equals(serviceName, that.serviceName);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(serviceName);
+        }
     }
 }

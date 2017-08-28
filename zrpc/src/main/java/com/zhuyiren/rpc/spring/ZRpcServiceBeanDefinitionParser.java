@@ -39,7 +39,6 @@ public class ZRpcServiceBeanDefinitionParser extends AbstractSingleBeanDefinitio
     private static final String ATTRIBUTE_ENGINE = "engineType";
     private static final String ATTRIBUTE_ID = "id";
     private static final String ATTRIBUTE_HOST = "host";
-    private static final String ATTRIBUTE_CACHED = "cached";
     private static final String ATTRIBUTE_SERVICE_NAME = "serviceName";
     private static final String ATTRIBUTE_PORT = "port";
 
@@ -78,12 +77,6 @@ public class ZRpcServiceBeanDefinitionParser extends AbstractSingleBeanDefinitio
         }
         builder.addPropertyValue("engine", engineCls);
 
-        String cachedAttr = element.getAttribute(ATTRIBUTE_CACHED);
-        boolean cached = false;
-        if (!StringUtils.isEmpty(cachedAttr)) {
-            cached = Boolean.parseBoolean(cachedAttr);
-        }
-        builder.addPropertyValue("cache", cached);
 
         String serviceNameAttr = element.getAttribute(ATTRIBUTE_SERVICE_NAME);
         if (StringUtils.isEmpty(serviceNameAttr)) {

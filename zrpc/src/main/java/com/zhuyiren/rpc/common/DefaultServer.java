@@ -41,6 +41,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static com.zhuyiren.rpc.common.CommonConstant.ANY_HOST;
+
 /**
  * Created by zhuyiren on 2017/5/18.
  */
@@ -50,7 +52,6 @@ public class DefaultServer implements Server {
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultServer.class);
 
 
-    private static final String DEFAULT_HOST = "0.0.0.0";
     private static final int DEFAULT_PORT = 3324;
     private static final String ZK_SERVICE_PREFIX="node";
     private static final int DEFAULT_IO_THREAD_SIZE = Runtime.getRuntime().availableProcessors();
@@ -66,39 +67,27 @@ public class DefaultServer implements Server {
     private String zkConnectUrl;
     private CuratorFramework zkClient;
     private String zkNamespace;
+    private int ioThreadSize;
+    private boolean useZip;
 
 
-    public DefaultServer(String zkConnectUrl,String namespace, String host, int port, int ioThreadSize, boolean useZip) {
+    private boolean init(){
         LOGGER.debug("Io thread size:" + ioThreadSize + ",businessExecutors thread size:" + ioThreadSize);
         nioExecutors = new NioEventLoopGroup(ioThreadSize);
         businessExecutors = new DefaultEventExecutorGroup(ioThreadSize);
         initializerHandler = new ServerHandlerInitializer(this, useZip);
         initServerBootstrap();
-        this.host = host;
-        this.port = port;
-        this.zkConnectUrl = zkConnectUrl;
-        this.zkNamespace=namespace;
         zkClient= CuratorFrameworkFactory.builder()
                 .connectString(zkConnectUrl)
                 .retryPolicy(new RetryNTimes(10,5000))
                 .namespace(zkNamespace).build();
         zkClient.start();
         LOGGER.debug("Connect to zookeeper successfully");
+        return true;
     }
 
+    private DefaultServer(){
 
-    public DefaultServer(String zkConnectUrl,String zkNamespace) {
-        this(zkConnectUrl, zkNamespace,false);
-    }
-
-
-    public DefaultServer(String zkConnectUrl,String zkNamespace, boolean useZip) {
-        this(zkConnectUrl, zkNamespace,DEFAULT_IO_THREAD_SIZE, useZip);
-    }
-
-
-    public DefaultServer(String zkConnectUrl,String zkNamespace, int ioThreadSize, boolean useZip) {
-        this(zkConnectUrl,zkNamespace, DEFAULT_HOST, DEFAULT_PORT, ioThreadSize, useZip);
     }
 
     private void initServerBootstrap() {
@@ -116,6 +105,9 @@ public class DefaultServer implements Server {
         }
         if (port <= 0) {
             port = this.port;
+        }
+        if(ANY_HOST.equals(host)){
+            throw new IllegalArgumentException("The provider host must not be 0.0.0.0");
         }
         InetSocketAddress address = new InetSocketAddress(host, port);
         ProviderInformation provider = findProvider(address);
@@ -212,19 +204,11 @@ public class DefaultServer implements Server {
     }
 
     private ProviderInformation findProvider(SocketAddress address) {
-        SocketAddress anyAddress = new InetSocketAddress("0.0.0.0", ((InetSocketAddress) address).getPort());
-        for (ProviderInformation provider : services) {
-            if (provider.getAddress().equals(anyAddress)) {
-                return provider;
-            }
-        }
-
         for (ProviderInformation provider : services) {
             if (provider.getAddress().equals(address)) {
                 return provider;
             }
         }
-
         return null;
     }
 
@@ -255,15 +239,101 @@ public class DefaultServer implements Server {
         zkClient.create().creatingParentsIfNeeded().withMode(CreateMode.EPHEMERAL_SEQUENTIAL)
                 .forPath(nodePath,insertData.getBytes());
         return true;
-
     }
 
-    private class ZRpcWatcher implements Watcher {
-        @Override
-        public void process(WatchedEvent event) {
+
+    public static ServerBuild newBuilder(){
+        return new ServerBuild();
+    }
+
+
+
+    public static class ServerBuild{
+
+        private String host;
+        private int port;
+        private String zkConnectUrl;
+        private int ioThreadSize;
+        private String zkNamespace;
+        private boolean useZip;
+
+
+        private ServerBuild(){
 
         }
+
+
+        public ServerBuild host(String host){
+            if(ANY_HOST.equals(host)){
+                throw new IllegalArgumentException("The host must not be 0.0.0.0");
+            }
+            this.host=host;
+            return this;
+        }
+
+        public ServerBuild port(int port){
+            if(port<=0 || port>=65535){
+                throw new IllegalArgumentException("The port is not valid");
+            }
+            this.port=port;
+            return this;
+        }
+
+        public ServerBuild zkConnect(String zkConnectUrl){
+            this.zkConnectUrl=zkConnectUrl;
+            return this;
+        }
+
+        public ServerBuild zkNamespace(String zkNamespace){
+            this.zkNamespace=zkNamespace;
+            return this;
+        }
+
+        public ServerBuild ioThreadSize(int size){
+            this.ioThreadSize=size;
+            return this;
+        }
+
+
+
+        public ServerBuild zip(boolean useZip){
+            this.useZip=useZip;
+            return this;
+        }
+
+
+        public Server build(){
+            DefaultServer server = new DefaultServer();
+            if(!StringUtils.hasText(host)){
+                throw new IllegalStateException("The host must be set");
+            }
+            server.host=host;
+            if(port==0){
+                port=DEFAULT_PORT;
+            }
+            server.port=port;
+            if(!StringUtils.hasText(zkConnectUrl)){
+                throw new IllegalStateException("The zookeeper connect url must be set");
+            }
+            server.zkConnectUrl=zkConnectUrl;
+            if(ioThreadSize==0){
+                ioThreadSize=DEFAULT_IO_THREAD_SIZE;
+            }
+            server.ioThreadSize=ioThreadSize;
+            if(!StringUtils.hasText(zkNamespace)){
+                LOGGER.warn("The zookeeper namespace is empty");
+            }
+            server.zkNamespace=zkNamespace;
+            server.useZip=useZip;
+            server.init();
+            return server;
+        }
     }
+
+
+
+
+
 
 
 }

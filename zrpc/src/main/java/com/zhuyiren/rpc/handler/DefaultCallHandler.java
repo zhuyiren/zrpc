@@ -25,8 +25,6 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.net.SocketAddress;
 import java.util.HashMap;
@@ -42,18 +40,17 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class DefaultCallHandler implements CallHandler {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(DefaultCallHandler.class);
 
     private static final int STATE_SHOULD_CONNECTION = 0;
     private static final int STATE_RUNNING = 1;
-    private static final int STATE_CLOSED = 2;
+    private static final int STATE_SHUTDOWN = 2;
     private static final int STATE_CONNECTING = 3;
 
 
     private final AtomicLong callId;
     private final ConcurrentHashMap<Long, Call> callMap;
     private static final int TIME_OUT = 10000;
-    private final Object synchronization;
+    private final Object stateLock;
     private volatile int state;
     private volatile SocketAddress remoteAddress;
     private final EventLoopGroup executors;
@@ -61,15 +58,15 @@ public class DefaultCallHandler implements CallHandler {
     private final ScheduledExecutorService connectThread;
     private final ClientHandlerInitializer clientHandlerInitializer;
     private volatile CallWriter callWriter;
-    private final Map<String,Boolean> serviceState;
+    private final Map<String, Boolean> serviceState;
 
 
     public DefaultCallHandler(EventLoopGroup executors, ScheduledExecutorService connectThread, SocketAddress remoteAddress, boolean useZip) {
         callId = new AtomicLong(0);
         callMap = new ConcurrentHashMap<>();
-        serviceState=new ConcurrentHashMap<>();
+        serviceState = new ConcurrentHashMap<>();
         clientHandlerInitializer = new ClientHandlerInitializer(this, useZip);
-        synchronization = new Object();
+        stateLock = new Object();
         this.remoteAddress = remoteAddress;
         this.executors = executors;
         state = STATE_SHOULD_CONNECTION;
@@ -91,8 +88,14 @@ public class DefaultCallHandler implements CallHandler {
             call.setException(new NoConnectException("connect is not ready"));
             return;
         }
-        if(!serviceState.get(call.getRequest().getServiceName())){
-            call.setException(new RpcServiceNotValidException("service is not ready"));
+        String serviceName = call.getRequest().getServiceName();
+        Boolean serviceValid = serviceState.get(serviceName);
+        if (serviceValid == null) {
+            call.setException(new RpcServiceNotValidException(serviceName + " service is not valid"));
+            return;
+        }
+        if (!serviceValid) {
+            call.setException(new RpcServiceNotValidException(serviceName + " service is not ready"));
             return;
         }
         long currentId = callId.getAndIncrement();
@@ -108,21 +111,25 @@ public class DefaultCallHandler implements CallHandler {
 
     @Override
     public void ready() {
-        synchronized (synchronization) {
+        synchronized (stateLock) {
             state = STATE_RUNNING;
-            synchronization.notifyAll();
+            stateLock.notifyAll();
         }
     }
 
     @Override
-    public void connect(SocketAddress address) throws InterruptedException {
-        remoteAddress=address;
-        bootstrap.connect(remoteAddress).sync();
-        synchronized (synchronization) {
+    public boolean connect(SocketAddress address) throws InterruptedException {
+        synchronized (stateLock) {
+            if(state != STATE_SHOULD_CONNECTION){
+                return false;
+            }
+            remoteAddress = address;
+            bootstrap.connect(remoteAddress).sync();
             while (state != STATE_RUNNING && !Thread.interrupted()) {
-                synchronization.wait();
+                stateLock.wait();
             }
         }
+        return true;
     }
 
     @Override
@@ -141,26 +148,26 @@ public class DefaultCallHandler implements CallHandler {
 
     @Override
     public void shutdown() {
-        synchronized (synchronization) {
-            state = STATE_CLOSED;
+        synchronized (stateLock) {
+            state = STATE_SHUTDOWN;
         }
         callWriter.close();
     }
 
     @Override
     public void close() {
-        synchronized (synchronization) {
+        synchronized (stateLock) {
             if (state == STATE_RUNNING) {
-                state = STATE_CONNECTING;
+                state = STATE_SHOULD_CONNECTION;
                 Map<Long, Call> oldCalls = new HashMap<>(callMap);
-
                 connectThread.submit(new Runnable() {
                     @Override
                     public void run() {
                         try {
-                            connect(remoteAddress);
-                            for (Map.Entry<Long, Call> entry : oldCalls.entrySet()) {
-                                writeCall(entry.getValue());
+                            if (connect(remoteAddress)) {
+                                for (Map.Entry<Long, Call> entry : oldCalls.entrySet()) {
+                                    writeCall(entry.getValue());
+                                }
                             }
                         } catch (Exception e) {
                             connectThread.submit(this);
@@ -185,10 +192,10 @@ public class DefaultCallHandler implements CallHandler {
     @Override
     public boolean setServiceState(String serviceName, boolean state) {
         serviceState.put(serviceName, state);
-        Boolean removed=true;
+        Boolean removed = true;
         for (Map.Entry<String, Boolean> entry : serviceState.entrySet()) {
-            if(entry.getValue()==true){
-                removed=false;
+            if (entry.getValue() == true) {
+                removed = false;
                 break;
             }
         }
@@ -213,7 +220,6 @@ public class DefaultCallHandler implements CallHandler {
     public SocketAddress getRemoteAddress() {
         return remoteAddress;
     }
-
 
 
 }

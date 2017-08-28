@@ -31,7 +31,7 @@ import org.w3c.dom.Element;
  */
 public class ZRpcProviderScanBeanDefinitionParser extends ComponentScanBeanDefinitionParser {
 
-    private static final TypeFilter PROVIDER_TYPE_FILTER = (metadataReader, metadataReaderFactory) -> metadataReader.getAnnotationMetadata().hasAnnotation(Provider.class.getCanonicalName())
+    private static final TypeFilter PROVIDER_TYPE_FILTER = (metadataReader, metadataReaderFactory) -> metadataReader.getAnnotationMetadata().hasAnnotation(ZRpcProvider.class.getCanonicalName())
             && metadataReader.getClassMetadata().isConcrete();
 
     private static final String ZRPC_PROVIDER_FACTORY_POST_PROCESSOR = ZRpcProviderPostProcessor.class.getCanonicalName();

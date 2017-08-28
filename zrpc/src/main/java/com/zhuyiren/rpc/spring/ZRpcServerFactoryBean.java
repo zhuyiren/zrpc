@@ -34,10 +34,13 @@ public class ZRpcServerFactoryBean implements SmartFactoryBean<Server> {
     private boolean useZip;
     private String zkNamespace;
 
+
     @Override
     public Server getObject() throws Exception {
-        Server server=new DefaultServer(zkConnectUrl,zkNamespace,host,port,ioThreadSize,useZip);
-        this.server=server;
+        Server server = DefaultServer.newBuilder().host(host)
+                .port(port).zkConnect(zkConnectUrl).zkNamespace(zkNamespace).ioThreadSize(ioThreadSize)
+                .zip(useZip).build();
+        this.server = server;
         return server;
     }
 
@@ -61,8 +64,8 @@ public class ZRpcServerFactoryBean implements SmartFactoryBean<Server> {
         return true;
     }
 
-    public void shutdown(){
-        if(server!=null){
+    public void shutdown() {
+        if (server != null) {
             server.shutdown();
         }
     }

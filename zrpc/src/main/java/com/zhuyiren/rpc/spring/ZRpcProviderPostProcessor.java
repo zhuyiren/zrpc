@@ -74,7 +74,7 @@ public class ZRpcProviderPostProcessor implements BeanFactoryPostProcessor {
         providerBeanDefinition.setBeanClass(ZRpcProviderFactoryBean.class);
         providerBeanDefinition.setLazyInit(false);
         Map<String, Object> attributes =  beanDefinition.getMetadata()
-                .getAnnotationAttributes(Provider.class.getCanonicalName());
+                .getAnnotationAttributes(ZRpcProvider.class.getCanonicalName());
         String attrServiceName = (String) attributes.get(ATTRIBUTE_SERVICE_NAME);
         if(!StringUtils.hasText(attrServiceName)){
             attrServiceName=getServiceName(beanDefinition);

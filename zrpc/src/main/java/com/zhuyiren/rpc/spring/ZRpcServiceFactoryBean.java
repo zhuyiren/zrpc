@@ -26,6 +26,8 @@ import org.springframework.util.StringUtils;
 
 import java.net.InetSocketAddress;
 
+import static com.zhuyiren.rpc.common.CommonConstant.ANY_HOST;
+
 /**
  * Created by zhuyiren on 2017/8/2.
  */
@@ -37,7 +39,6 @@ public class ZRpcServiceFactoryBean implements SmartFactoryBean, ApplicationCont
     private Class<? extends Engine> engine;
     private String host;
     private int port;
-    private boolean cache;
     private String serviceName;
 
     private ApplicationContext context;
@@ -51,6 +52,9 @@ public class ZRpcServiceFactoryBean implements SmartFactoryBean, ApplicationCont
     @Override
     public Object getObject() throws Exception {
         InetSocketAddress address;
+        if(ANY_HOST.equals(host)){
+            throw new IllegalArgumentException("The consumer connect host must not be 0.0.0.0");
+        }
         if (!StringUtils.hasText(host)) {
             address = null;
         } else {
@@ -60,7 +64,7 @@ public class ZRpcServiceFactoryBean implements SmartFactoryBean, ApplicationCont
         if (client == null) {
             this.client = context.getBean(Client.class);
         }
-        return client.exportService(engine, ifcCls, serviceName, address, cache);
+        return client.exportService(engine, ifcCls, serviceName, address);
     }
 
     @Override
@@ -127,13 +131,8 @@ public class ZRpcServiceFactoryBean implements SmartFactoryBean, ApplicationCont
         this.port = port;
     }
 
-    public boolean isCache() {
-        return cache;
-    }
 
-    public void setCache(boolean cache) {
-        this.cache = cache;
-    }
+
 
 
     public String getServiceName() {

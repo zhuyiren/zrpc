@@ -73,7 +73,6 @@
         <xsd:attribute name="interface" type="xsd:string" use="required"/>
         <xsd:attribute name="host" type="xsd:string"/>
         <xsd:attribute name="engineType" type="xsd:string"/>
-        <xsd:attribute name="cached" type="xsd:boolean" default="false"/>
         <xsd:attribute name="serviceName" type="xsd:string"/>
         <xsd:attribute name="port" default="3324">
             <xsd:simpleType>
@@ -109,7 +108,7 @@
                 </xsd:restriction>
             </xsd:simpleType>
         </xsd:attribute>
-        <xsd:attribute name="host" default="0.0.0.0" type="xsd:string"/>
+        <xsd:attribute name="host" type="xsd:string" use="required"/>
         <xsd:attribute name="ioThreadSize" type="xsd:positiveInteger"/>
         <xsd:attribute name="useZip" type="xsd:boolean"/>
         <xsd:attribute name="zkConnectUrl" type="xsd:string" use="required"/>

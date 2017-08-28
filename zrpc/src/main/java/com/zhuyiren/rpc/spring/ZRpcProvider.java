@@ -15,13 +15,13 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Service
-public @interface Provider {
+public @interface ZRpcProvider {
 
     String value() default "";
 
     String serviceName() default "";
 
-    String host() default "0.0.0.0";
+    String host() default "";
 
     int port() default 3324;
 

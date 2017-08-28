@@ -29,7 +29,5 @@ public @interface ZRpcService {
 
     int port() default 3324;
 
-    boolean cache() default false;
-
     String serviceName() default "";
 }

@@ -24,10 +24,9 @@ import java.net.SocketAddress;
  * @author zhuyiren
  * @date 2017/8/21
  */
-public interface ZkRegister {
+public interface ServiceManage {
 
     SocketAddress getChangedAddress(String serviceName) throws Exception;
-
 
     boolean watchService(String serviceName);
 

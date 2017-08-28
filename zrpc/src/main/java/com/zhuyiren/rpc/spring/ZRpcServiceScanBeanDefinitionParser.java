@@ -114,8 +114,6 @@ public class ZRpcServiceScanBeanDefinitionParser implements BeanDefinitionParser
         Object port = attributes.get("port");
         rootBeanDefinition.getPropertyValues().addPropertyValue("port",port);
 
-        Object cache = attributes.get("cache");
-        rootBeanDefinition.getPropertyValues().addPropertyValue("cache",cache);
 
         String serviceName= ((String) attributes.get("serviceName"));
         if(!StringUtils.hasText(serviceName)){

@@ -41,7 +41,7 @@ public class RequestHandler extends ChannelInboundHandlerAdapter implements Call
 
     public void writeRequestPacket(Packet request) {
         context.writeAndFlush(request).addListener(future -> {
-            if(future.cause()!=null){
+            if (future.cause() != null) {
                 request.setException(future.cause().getMessage());
                 resolveResponse(request);
             }
@@ -50,7 +50,7 @@ public class RequestHandler extends ChannelInboundHandlerAdapter implements Call
 
     @Override
     public void close() {
-        if(context!=null) {
+        if (context != null) {
             context.close();
         }
     }

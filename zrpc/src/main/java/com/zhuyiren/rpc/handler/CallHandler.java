@@ -33,7 +33,7 @@ public interface CallHandler {
 
     void ready();
 
-    void connect(SocketAddress address) throws InterruptedException;
+    boolean connect(SocketAddress address) throws InterruptedException;
 
     void completeCall(Packet packet);
 

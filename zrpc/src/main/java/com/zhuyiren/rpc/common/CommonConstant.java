@@ -34,5 +34,7 @@ public final class CommonConstant {
 
     public static final String IDLE_PONG="pong";
 
+    public static final String ANY_HOST="0.0.0.0";
+
 
 }
