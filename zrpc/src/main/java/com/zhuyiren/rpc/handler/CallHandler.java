@@ -20,7 +20,6 @@ package com.zhuyiren.rpc.handler;
 import com.zhuyiren.rpc.common.Packet;
 import com.zhuyiren.rpc.exception.TimeoutException;
 
-import java.net.Socket;
 import java.net.SocketAddress;
 
 /**

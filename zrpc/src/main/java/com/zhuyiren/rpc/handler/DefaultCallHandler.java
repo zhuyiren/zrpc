@@ -194,7 +194,7 @@ public class DefaultCallHandler implements CallHandler {
         serviceState.put(serviceName, state);
         Boolean removed = true;
         for (Map.Entry<String, Boolean> entry : serviceState.entrySet()) {
-            if (entry.getValue() == true) {
+            if (entry.getValue()) {
                 removed = false;
                 break;
             }

@@ -30,13 +30,13 @@ import java.util.Map;
  * @author zhuyiren
  * @date 2017/8/17
  */
-public class JsonEngine  extends AbstractEngine{
+public class JsonEngine extends AbstractEngine {
 
-    private static final String ENGINE_JSON="json";
-    private Map<Type,ParameterizedType> typeMap;
+    private static final String ENGINE_JSON = "json";
+    private Map<Type, ParameterizedType> typeMap;
 
-    public JsonEngine(){
-        typeMap=new HashMap<>();
+    public JsonEngine() {
+        typeMap = new HashMap<>();
     }
 
     @Override
@@ -47,6 +47,7 @@ public class JsonEngine  extends AbstractEngine{
     @Override
     public byte[] encodeArgument(ArgumentHolder argumentHolder) throws Exception {
         return JSON.toJSONBytes(argumentHolder);
+
     }
 
     @Override
@@ -62,6 +63,6 @@ public class JsonEngine  extends AbstractEngine{
     @Override
     public WrapReturn decodeResult(byte[] inBytes, Type type) throws Exception {
         ParameterizedType parameterizedType = typeMap.computeIfAbsent(type, key -> new ParameterizedTypeImpl(new Type[]{key}, null, WrapReturn.class));
-        return JSON.parseObject(inBytes,parameterizedType);
+        return JSON.parseObject(inBytes, parameterizedType);
     }
 }

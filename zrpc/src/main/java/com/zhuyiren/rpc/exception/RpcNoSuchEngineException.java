@@ -14,19 +14,16 @@
  * limitations under the License.
  */
 
-package com.zhuyiren.rpc.common;
-
-import com.zhuyiren.rpc.handler.CallHandler;
-
-import java.net.SocketAddress;
+package com.zhuyiren.rpc.exception;
 
 /**
  * @author zhuyiren
- * @date 2017/8/21
+ * @date 2017/8/31
  */
-public interface CallHandlerManager {
+public class RpcNoSuchEngineException extends RpcException {
 
-    CallHandler createCaller(SocketAddress address) throws Exception;
 
-    CallHandler removeCaller(CallHandler callHandler);
+    public RpcNoSuchEngineException(String msg) {
+        super(msg);
+    }
 }

@@ -85,7 +85,7 @@ public class Call {
         long duration=0;
         while (true){
             LockSupport.parkNanos(waitTime-duration);
-            if(done==true){
+            if(done){
                 break;
             }
             duration=System.nanoTime()-startTime;

@@ -59,8 +59,8 @@ public class ClassUtils {
      * @param clz2 为普通类型或者装箱类型
      * @return
      */
-    private static boolean compareClass(Class clz1, Class clz2) {
-        if (clz1.equals(clz2)) {
+    private static boolean compareClass(Class<?> clz1, Class<?> clz2) {
+        if (clz1.isAssignableFrom(clz2)) {
             return true;
         }
 

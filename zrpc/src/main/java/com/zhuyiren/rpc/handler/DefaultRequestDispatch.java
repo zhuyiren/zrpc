@@ -31,32 +31,40 @@ public class DefaultRequestDispatch extends ChannelInboundHandlerAdapter impleme
 
 
     private RequestHandlerAdapter handlerAdapter;
-    private Map<String,Object> serviceHandlers=new ConcurrentHashMap<>();
+    private Map<String, Object> serviceHandlers = new ConcurrentHashMap<>();
 
-    public DefaultRequestDispatch(RequestHandlerAdapter handlerAdapter){
-        this.handlerAdapter=handlerAdapter;
+    public DefaultRequestDispatch(RequestHandlerAdapter handlerAdapter) {
+        this.handlerAdapter = handlerAdapter;
     }
 
-    public DefaultRequestDispatch(){
-        this.handlerAdapter=new RequestHandlerAdapterComposite();
+    public DefaultRequestDispatch() {
+        this.handlerAdapter = new RequestHandlerAdapterComposite();
     }
 
     @Override
     public void registerService(String serviceName, Object handler) {
-        serviceHandlers.put(serviceName,handler);
+        serviceHandlers.put(serviceName, handler);
     }
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        Packet request=(Packet) msg;
-        Object handler=serviceHandlers.get(request.getServiceName());
+        Packet request = (Packet) msg;
+        Object handler = serviceHandlers.get(request.getServiceName());
         Packet response = doDispatch(request, handler);
         ctx.writeAndFlush(response);
     }
 
     @Override
     public Packet doDispatch(Packet request, Object handler) {
-        return handlerAdapter.handle(request, handler);
+
+        if (handlerAdapter.support(request)) {
+            return handlerAdapter.handle(request, handler);
+        }
+
+        String exception = "no such engine type";
+        Packet packet = new Packet(request);
+        packet.setException(exception);
+        return packet;
     }
 
     @Override

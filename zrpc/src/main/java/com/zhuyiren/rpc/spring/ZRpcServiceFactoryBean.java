@@ -16,13 +16,13 @@
 
 package com.zhuyiren.rpc.spring;
 
+import com.google.common.base.Strings;
 import com.zhuyiren.rpc.common.Client;
 import com.zhuyiren.rpc.engine.Engine;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.SmartFactoryBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
-import org.springframework.util.StringUtils;
 
 import java.net.InetSocketAddress;
 
@@ -55,7 +55,7 @@ public class ZRpcServiceFactoryBean implements SmartFactoryBean, ApplicationCont
         if(ANY_HOST.equals(host)){
             throw new IllegalArgumentException("The consumer connect host must not be 0.0.0.0");
         }
-        if (!StringUtils.hasText(host)) {
+        if (Strings.isNullOrEmpty(host)) {
             address = null;
         } else {
             address = new InetSocketAddress(host, port);

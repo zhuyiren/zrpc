@@ -17,8 +17,10 @@
 package com.zhuyiren.rpc.common;
 
 
+import com.google.common.base.Strings;
+import com.zhuyiren.rpc.engine.Engine;
+import com.zhuyiren.rpc.engine.ProtostuffEngine;
 import com.zhuyiren.rpc.handler.ServerHandlerInitializer;
-import com.zhuyiren.rpc.utils.ZookeeperUtils;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -27,17 +29,16 @@ import io.netty.util.concurrent.DefaultEventExecutorGroup;
 import io.netty.util.concurrent.EventExecutorGroup;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.framework.imps.CuratorFrameworkState;
 import org.apache.curator.retry.RetryNTimes;
-import org.apache.curator.retry.RetryOneTime;
 import org.apache.zookeeper.*;
-import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.util.StringUtils;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -57,7 +58,7 @@ public class DefaultServer implements Server {
     private static final int DEFAULT_IO_THREAD_SIZE = Runtime.getRuntime().availableProcessors();
 
 
-    private List<ProviderInformation> services = new ArrayList<>();
+    private List<ProviderInformation> services=new ArrayList<>();
     private NioEventLoopGroup nioExecutors;
     private EventExecutorGroup businessExecutors;
     private ServerBootstrap serverBootstrap;
@@ -69,20 +70,26 @@ public class DefaultServer implements Server {
     private String zkNamespace;
     private int ioThreadSize;
     private boolean useZip;
+    private List<Engine> engines;
 
 
     private boolean init(){
         LOGGER.debug("Io thread size:" + ioThreadSize + ",businessExecutors thread size:" + ioThreadSize);
         nioExecutors = new NioEventLoopGroup(ioThreadSize);
         businessExecutors = new DefaultEventExecutorGroup(ioThreadSize);
-        initializerHandler = new ServerHandlerInitializer(this, useZip);
+        if(engines==null || engines.size()==0){
+            initEngines();
+        }
+        initializerHandler = new ServerHandlerInitializer(this,engines, useZip);
         initServerBootstrap();
-        zkClient= CuratorFrameworkFactory.builder()
-                .connectString(zkConnectUrl)
-                .retryPolicy(new RetryNTimes(10,5000))
-                .namespace(zkNamespace).build();
-        zkClient.start();
-        LOGGER.debug("Connect to zookeeper successfully");
+        if(!Strings.isNullOrEmpty(zkConnectUrl)){
+            zkClient= CuratorFrameworkFactory.builder()
+                    .connectString(zkConnectUrl)
+                    .retryPolicy(new RetryNTimes(10,5000))
+                    .namespace(zkNamespace).build();
+            zkClient.start();
+            LOGGER.debug("Connect to zookeeper successfully");
+        }
         return true;
     }
 
@@ -100,7 +107,7 @@ public class DefaultServer implements Server {
 
     @Override
     public boolean register(String serviceName, Object handler, String host, int port) {
-        if (!StringUtils.hasText(host)) {
+        if (Strings.isNullOrEmpty(host)) {
             host = this.host;
         }
         if (port <= 0) {
@@ -129,11 +136,6 @@ public class DefaultServer implements Server {
         return provider.addService(serviceName, handler);
     }
 
-
-    @Override
-    public boolean register(String serviceName, Object handler, int port) {
-        return register(serviceName, handler, host, port);
-    }
 
     @Override
     public boolean register(String serviceName, Object handler) {
@@ -174,7 +176,7 @@ public class DefaultServer implements Server {
     @Override
     public Map<String, Object> getServices(SocketAddress address) {
         ProviderInformation provider = findProvider(address);
-        return provider.getServices();
+        return provider==null?new HashMap<>():provider.getServices();
     }
 
     @Override
@@ -184,6 +186,13 @@ public class DefaultServer implements Server {
 
 
     private void registerZookeeper(SocketAddress address, String serviceName) throws Exception {
+
+        if(zkClient==null ||zkClient.getState()!= CuratorFrameworkState.STARTED){
+            LOGGER.warn("The server is not registering service information to zookeeper,because it not connecting the zookeeper");
+            return;
+        }
+
+
         if (!(address instanceof InetSocketAddress)) {
             throw new IllegalArgumentException("address must be InetSocketAddress");
         }
@@ -200,7 +209,6 @@ public class DefaultServer implements Server {
         if(writeZookeeperConfig(path, sb.toString())){
             LOGGER.debug("register service:[" + serviceName + "] to zookeeper");
         }
-        return;
     }
 
     private ProviderInformation findProvider(SocketAddress address) {
@@ -214,8 +222,8 @@ public class DefaultServer implements Server {
 
 
     private boolean writeZookeeperConfig(String path, String insertData) throws Exception {
-        boolean isCreate = true;
 
+        boolean isCreate = true;
         if (zkClient.checkExists().forPath(path) != null) {
             isCreate = false;
         }
@@ -247,6 +255,11 @@ public class DefaultServer implements Server {
     }
 
 
+    private List<Engine> initEngines(){
+        engines=new ArrayList<>();
+        engines.add(new ProtostuffEngine());
+        return engines;
+    }
 
     public static class ServerBuild{
 
@@ -256,10 +269,11 @@ public class DefaultServer implements Server {
         private int ioThreadSize;
         private String zkNamespace;
         private boolean useZip;
+        private List<Engine> engines;
 
 
         private ServerBuild(){
-
+            engines=new ArrayList<>();
         }
 
 
@@ -301,10 +315,26 @@ public class DefaultServer implements Server {
             return this;
         }
 
+        public ServerBuild addEngines(List<Engine> engines){
+            if(engines==null){
+                throw new IllegalArgumentException("The engines is null");
+            }
+            this.engines.addAll(engines);
+            return this;
+        }
+
+        public ServerBuild addEngine(Engine engine){
+            if(engine==null){
+                throw new IllegalArgumentException("The engine is null");
+            }
+            this.engines.add(engine);
+            return this;
+        }
+
 
         public Server build(){
             DefaultServer server = new DefaultServer();
-            if(!StringUtils.hasText(host)){
+            if(Strings.isNullOrEmpty(host)){
                 throw new IllegalStateException("The host must be set");
             }
             server.host=host;
@@ -312,19 +342,20 @@ public class DefaultServer implements Server {
                 port=DEFAULT_PORT;
             }
             server.port=port;
-            if(!StringUtils.hasText(zkConnectUrl)){
+            /*if(Strings.isNullOrEmpty(zkConnectUrl)){
                 throw new IllegalStateException("The zookeeper connect url must be set");
-            }
+            }*/
             server.zkConnectUrl=zkConnectUrl;
             if(ioThreadSize==0){
                 ioThreadSize=DEFAULT_IO_THREAD_SIZE;
             }
             server.ioThreadSize=ioThreadSize;
-            if(!StringUtils.hasText(zkNamespace)){
+            if(Strings.isNullOrEmpty(zkNamespace)){
                 LOGGER.warn("The zookeeper namespace is empty");
             }
             server.zkNamespace=zkNamespace;
             server.useZip=useZip;
+            server.engines=engines;
             server.init();
             return server;
         }

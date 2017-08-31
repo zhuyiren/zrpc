@@ -28,7 +28,6 @@ public interface Server {
 
     boolean register(String serviceName, Object handler,String host,int port);
 
-    boolean register(String serviceName,Object handler,int port);
 
     boolean register(String serviceName,Object handler);
 

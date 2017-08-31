@@ -19,10 +19,7 @@ package com.zhuyiren.rpc.engine;
 import com.zhuyiren.rpc.common.WrapReturn;
 import com.zhuyiren.rpc.handler.ArgumentHolder;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.lang.reflect.Type;
 
 /**
@@ -40,12 +37,7 @@ public class NormalEngine extends AbstractEngine implements Engine {
 
     @Override
     public byte[] encodeArgument(ArgumentHolder argumentHolder) throws Exception {
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        ObjectOutputStream oos = new ObjectOutputStream(bos);
-        oos.writeObject(argumentHolder);
-        byte[] result = bos.toByteArray();
-        oos.close();
-        return result;
+        return serializeObject(argumentHolder);
     }
 
     @Override
@@ -59,12 +51,7 @@ public class NormalEngine extends AbstractEngine implements Engine {
 
     @Override
     public byte[] encodeResult(WrapReturn wrapReturn) throws Exception {
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        ObjectOutputStream oos = new ObjectOutputStream(bos);
-        oos.writeObject(wrapReturn);
-        byte[] result = bos.toByteArray();
-        oos.close();
-        return result;
+        return serializeObject(wrapReturn);
     }
 
     @Override
@@ -73,6 +60,16 @@ public class NormalEngine extends AbstractEngine implements Engine {
         ObjectInputStream ois = new ObjectInputStream(bis);
         WrapReturn result = (WrapReturn) ois.readObject();
         ois.close();
+        return result;
+    }
+
+
+    private byte[] serializeObject(Object object) throws IOException{
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        ObjectOutputStream oos = new ObjectOutputStream(bos);
+        oos.writeObject(object);
+        byte[] result = bos.toByteArray();
+        oos.close();
         return result;
     }
 }

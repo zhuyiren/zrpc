@@ -16,8 +16,6 @@
 
 package com.zhuyiren.rpc.common;
 
-import org.apache.zookeeper.Watcher;
-
 import java.net.SocketAddress;
 
 /**

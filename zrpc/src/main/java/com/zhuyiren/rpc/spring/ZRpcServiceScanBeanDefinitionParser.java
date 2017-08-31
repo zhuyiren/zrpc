@@ -16,6 +16,7 @@
 
 package com.zhuyiren.rpc.spring;
 
+import com.google.common.base.Strings;
 import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
@@ -116,7 +117,7 @@ public class ZRpcServiceScanBeanDefinitionParser implements BeanDefinitionParser
 
 
         String serviceName= ((String) attributes.get("serviceName"));
-        if(!StringUtils.hasText(serviceName)){
+        if(Strings.isNullOrEmpty(serviceName)){
             serviceName=attrIfcCls.getCanonicalName();
         }
         rootBeanDefinition.getPropertyValues().addPropertyValue("serviceName",serviceName);

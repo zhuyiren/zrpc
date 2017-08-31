@@ -39,7 +39,6 @@ public class ServerIdleHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-
         if(msg instanceof Packet){
             if (CommonConstant.IDLE_PING.equals(((Packet) msg).getType())) {
                 ctx.writeAndFlush(PACKET_PONG);

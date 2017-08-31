@@ -16,11 +16,11 @@
 
 package com.zhuyiren.rpc.utils;
 
+import com.google.common.base.Strings;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.ACL;
-import org.springframework.util.StringUtils;
 
 import java.util.List;
 
@@ -33,7 +33,7 @@ public class ZookeeperUtils {
 
 
     public static String createNode(ZooKeeper zk, String path,byte[] data, List<ACL> acls, CreateMode createMode) throws InterruptedException,KeeperException{
-        if(!StringUtils.hasText(path) || !path.startsWith("/") || path.endsWith("/")){
+        if(Strings.isNullOrEmpty(path) || !path.startsWith("/") || path.endsWith("/")){
             throw new IllegalArgumentException("path must not be null or empty");
         }
 

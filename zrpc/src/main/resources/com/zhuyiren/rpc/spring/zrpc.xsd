@@ -64,7 +64,7 @@
             </xsd:simpleType>
         </xsd:attribute>
         <xsd:attribute name="useZip" type="xsd:boolean"/>
-        <xsd:attribute name="zkConnectUrl" type="xsd:string" use="required"/>
+        <xsd:attribute name="zkConnectUrl" type="xsd:string"/>
         <xsd:attribute name="zkNamespace" type="xsd:string" use="required"/>
     </xsd:attributeGroup>
 
@@ -111,7 +111,7 @@
         <xsd:attribute name="host" type="xsd:string" use="required"/>
         <xsd:attribute name="ioThreadSize" type="xsd:positiveInteger"/>
         <xsd:attribute name="useZip" type="xsd:boolean"/>
-        <xsd:attribute name="zkConnectUrl" type="xsd:string" use="required"/>
+        <xsd:attribute name="zkConnectUrl" type="xsd:string"/>
         <xsd:attribute name="zkNamespace" type="xsd:string" use="required"/>
     </xsd:attributeGroup>
 
@@ -136,9 +136,7 @@
     <xsd:group name="serverGroup">
         <xsd:sequence>
             <xsd:element ref="beans:description" minOccurs="0"/>
-            <xsd:choice minOccurs="0" maxOccurs="unbounded">
-                <xsd:element name="listener" type="beans:listOrSetType"/>
-            </xsd:choice>
+            <xsd:element name="engines" type="beans:listOrSetType" minOccurs="0" maxOccurs="1"/>
         </xsd:sequence>
     </xsd:group>
     

@@ -20,9 +20,7 @@ import com.zhuyiren.rpc.common.Server;
 import com.zhuyiren.rpc.common.PacketDecoder;
 import com.zhuyiren.rpc.common.PacketEncoder;
 import com.zhuyiren.rpc.common.ServerIdleHandler;
-import com.zhuyiren.rpc.engine.JsonEngine;
-import com.zhuyiren.rpc.engine.NormalEngine;
-import com.zhuyiren.rpc.engine.ProtostuffEngine;
+import com.zhuyiren.rpc.engine.Engine;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
@@ -34,6 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.SocketAddress;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -50,12 +49,11 @@ public class ServerHandlerInitializer extends ChannelInitializer<SocketChannel> 
     private boolean useZip;
 
 
-    public ServerHandlerInitializer(Server server,boolean useZip) {
+    public ServerHandlerInitializer(Server server, List<Engine> engines,boolean useZip) {
         this.server = server;
         statisticsHandler = new StatisticsHandler();
         this.useZip=useZip;
-        initHandlers();
-
+        this.handlerAdapter=new CommonRequestHandlerAdapter(engines);
     }
 
     @Override
@@ -89,15 +87,6 @@ public class ServerHandlerInitializer extends ChannelInitializer<SocketChannel> 
     }
 
 
-    public void initHandlers() {
-        RequestHandlerAdapter compositeHandler = new RequestHandlerAdapterComposite();
-        CommonRequestHandlerAdapter commonHandler = new CommonRequestHandlerAdapter();
-        commonHandler.addEngine(new NormalEngine());
-        commonHandler.addEngine(new ProtostuffEngine());
-        commonHandler.addEngine(new JsonEngine());
-        compositeHandler.addHandlerAdapter(commonHandler);
-        this.handlerAdapter = compositeHandler;
-    }
 
     private DefaultRequestDispatch initRequestDispatcher(SocketAddress address) {
         DefaultRequestDispatch requestDispatch = new DefaultRequestDispatch(handlerAdapter);

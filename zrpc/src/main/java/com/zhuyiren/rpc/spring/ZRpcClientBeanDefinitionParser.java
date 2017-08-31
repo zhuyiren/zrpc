@@ -16,6 +16,7 @@
 
 package com.zhuyiren.rpc.spring;
 
+import com.google.common.base.Strings;
 import com.zhuyiren.rpc.engine.Engine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,7 +28,6 @@ import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.beans.factory.xml.AbstractSingleBeanDefinitionParser;
 import org.springframework.beans.factory.xml.BeanDefinitionParserDelegate;
 import org.springframework.beans.factory.xml.ParserContext;
-import org.springframework.util.StringUtils;
 import org.springframework.util.xml.DomUtils;
 import org.w3c.dom.Element;
 
@@ -55,7 +55,7 @@ public class ZRpcClientBeanDefinitionParser extends AbstractSingleBeanDefinition
 
         String workerCountAttr = element.getAttribute(ATTRIBUTE_WORKER_THREAD_COUNT);
         int workCount=0;
-        if(StringUtils.hasText(workerCountAttr)){
+        if(!Strings.isNullOrEmpty(workerCountAttr)){
             workCount=Integer.parseInt(workerCountAttr);
         }
         builder.addPropertyValue("workerThreadCount",workCount);
@@ -63,7 +63,7 @@ public class ZRpcClientBeanDefinitionParser extends AbstractSingleBeanDefinition
 
         String useZipAttr = element.getAttribute(ATTRIBUTE_USE_ZIP);
         boolean useZip=false;
-        if(StringUtils.hasText(useZipAttr)){
+        if(!Strings.isNullOrEmpty(useZipAttr)){
             try {
                 useZip=Boolean.parseBoolean(useZipAttr);
             }catch (Exception e){
@@ -73,9 +73,9 @@ public class ZRpcClientBeanDefinitionParser extends AbstractSingleBeanDefinition
         builder.addPropertyValue("useZip",useZip);
 
         String zkConnectUrlAttr = element.getAttribute(ATTRIBUTE_ZK_CONNECT_URL);
-        if(!StringUtils.hasText(zkConnectUrlAttr)){
+        /*if(Strings.isNullOrEmpty(zkConnectUrlAttr)){
             parserContext.getReaderContext().error("The Zookeeper must be configurated",element);
-        }
+        }*/
         builder.addPropertyValue("zkConnectUrl",zkConnectUrlAttr);
 
         String zkNamespaceAttr=element.getAttribute(ATTRIBUTE_ZK_NAMESPACE);
@@ -98,7 +98,7 @@ public class ZRpcClientBeanDefinitionParser extends AbstractSingleBeanDefinition
         List<Object> objects = delegate.parseListElement(listElement, rootBeanDefinition);
         List<Engine> engines=new ArrayList<>();
         for (Object object : objects) {
-            if(object instanceof TypedStringValue && StringUtils.hasText(((TypedStringValue) object).getValue())){
+            if(object instanceof TypedStringValue && !Strings.isNullOrEmpty(((TypedStringValue) object).getValue())){
                 try {
                     Class<? extends Engine> engineCls = (Class<? extends Engine>) Class.forName(((TypedStringValue) object).getValue());
                     Engine engine = engineCls.newInstance();
@@ -134,7 +134,7 @@ public class ZRpcClientBeanDefinitionParser extends AbstractSingleBeanDefinition
     @Override
     protected String resolveId(Element element, AbstractBeanDefinition definition, ParserContext parserContext) throws BeanDefinitionStoreException {
         String id = element.getAttribute("id");
-        if (!StringUtils.hasText(id)) {
+        if (Strings.isNullOrEmpty(id)) {
             id=CLIENT_NAME_DEFAULT;
         }
         return id;

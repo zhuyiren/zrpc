@@ -16,15 +16,23 @@
 
 package com.zhuyiren.rpc.spring;
 
+import com.google.common.base.Strings;
+import com.zhuyiren.rpc.engine.Engine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.BeanDefinitionStoreException;
+import org.springframework.beans.factory.config.TypedStringValue;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
+import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.beans.factory.xml.AbstractSingleBeanDefinitionParser;
+import org.springframework.beans.factory.xml.BeanDefinitionParserDelegate;
 import org.springframework.beans.factory.xml.ParserContext;
-import org.springframework.util.StringUtils;
+import org.springframework.util.xml.DomUtils;
 import org.w3c.dom.Element;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author zhuyiren
@@ -43,14 +51,20 @@ public class ZRpcServerBeanDefinitionParser extends AbstractSingleBeanDefinition
     private static final String SERVER_NAME_DEFAULT="server";
     private static final String ATTRIBUTE_ZK_NAMESPACE="zkNamespace";
 
+    private static final String ENGINES_ELEMENT="engines";
+
+
 
 
     @Override
     protected void doParse(Element element, ParserContext parserContext, BeanDefinitionBuilder builder) {
+
+        BeanDefinitionParserDelegate delegate=new BeanDefinitionParserDelegate(parserContext.getReaderContext());
+
         String host = element.getAttribute(HOST_ATTRIBUTE);
         String attrPort = element.getAttribute(PORT_ATTRIBUTE);
         int port=0;
-        if(StringUtils.hasText(attrPort)){
+        if(!Strings.isNullOrEmpty(attrPort)){
             try {
                 port=Integer.parseInt(attrPort);
             }catch (Exception e){
@@ -59,7 +73,7 @@ public class ZRpcServerBeanDefinitionParser extends AbstractSingleBeanDefinition
         }
         int ioThreadSize=0;
         String attrIoThreadSize = element.getAttribute(ATTRIBUTE_IO_THREAD_SIZE);
-        if(StringUtils.hasText(attrIoThreadSize)){
+        if(!Strings.isNullOrEmpty(attrIoThreadSize)){
             try {
                 ioThreadSize=Integer.parseInt(attrIoThreadSize);
             }catch (Exception e){
@@ -78,9 +92,9 @@ public class ZRpcServerBeanDefinitionParser extends AbstractSingleBeanDefinition
         builder.addPropertyValue("useZip",useZip);
 
         String zkConnectUrlAttr = element.getAttribute(ATTRIBUTE_ZK_CONNECT_URL);
-        if(!StringUtils.hasText(zkConnectUrlAttr)){
+        /*if(Strings.isNullOrEmpty(zkConnectUrlAttr)){
             parserContext.getReaderContext().error("The Zookeeper connect's url must be set",element);
-        }
+        }*/
 
         String zkNamespaceAttr=element.getAttribute(ATTRIBUTE_ZK_NAMESPACE);
 
@@ -92,6 +106,45 @@ public class ZRpcServerBeanDefinitionParser extends AbstractSingleBeanDefinition
         beanDefinition.getPropertyValues().addPropertyValue("ioThreadSize",ioThreadSize);
         builder.addPropertyValue("zkConnectUrl",zkConnectUrlAttr);
         beanDefinition.setDestroyMethodName("shutdown");
+
+
+        List<Element> enginesElements = DomUtils.getChildElementsByTagName(element, ENGINES_ELEMENT);
+        if(enginesElements.size()>1){
+            parserContext.getReaderContext().error("must only have one engines element",element);
+        }
+        if(enginesElements.size()<=0){
+            return;
+        }
+        Element enginesElement = enginesElements.get(0);
+        List<Element> listElements = DomUtils.getChildElementsByTagName(enginesElement, "list");
+        if(listElements.size()>1){
+            parserContext.getReaderContext().error("must not have more than one list element",element);
+        }
+        Element listElement = listElements.get(0);
+        RootBeanDefinition rootBeanDefinition = new RootBeanDefinition();
+        List<Object> objects = delegate.parseListElement(listElement, rootBeanDefinition);
+        List<Engine> engines=new ArrayList<>();
+        for (Object object : objects) {
+            if(object instanceof TypedStringValue && !Strings.isNullOrEmpty(((TypedStringValue) object).getValue())){
+                try {
+                    Class<? extends Engine> engineCls = (Class<? extends Engine>) Class.forName(((TypedStringValue) object).getValue());
+                    Engine engine = engineCls.newInstance();
+                    if(engines.contains(engine)){
+                        if(LOGGER.isDebugEnabled()){
+                            LOGGER.debug(engineCls +" have registered the Client once");
+                            continue;
+                        }
+                    }
+                    engines.add(engine);
+                } catch (ClassNotFoundException e) {
+                    parserContext.getReaderContext().error(((TypedStringValue) object).getValue()+
+                            " is not a implementation of Engine interface",listElement);
+                }catch (Exception e){
+                    parserContext.getReaderContext().error(e.getMessage(),listElement);
+                }
+            }
+        }
+        builder.addPropertyValue("engines",engines);
     }
 
     protected Class<?> getBeanClass(Element element) {
@@ -102,7 +155,7 @@ public class ZRpcServerBeanDefinitionParser extends AbstractSingleBeanDefinition
     @Override
     protected String resolveId(Element element, AbstractBeanDefinition definition, ParserContext parserContext) throws BeanDefinitionStoreException {
         String id = element.getAttribute("id");
-        if (!StringUtils.hasText(id)) {
+        if (Strings.isNullOrEmpty(id)) {
             id=SERVER_NAME_DEFAULT;
         }
         return id;

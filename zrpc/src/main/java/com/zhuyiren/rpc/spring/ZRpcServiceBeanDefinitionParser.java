@@ -16,6 +16,7 @@
 
 package com.zhuyiren.rpc.spring;
 
+import com.google.common.base.Strings;
 import com.zhuyiren.rpc.engine.Engine;
 import com.zhuyiren.rpc.engine.ProtostuffEngine;
 import org.springframework.beans.factory.BeanDefinitionStoreException;
@@ -42,12 +43,10 @@ public class ZRpcServiceBeanDefinitionParser extends AbstractSingleBeanDefinitio
     private static final String ATTRIBUTE_SERVICE_NAME = "serviceName";
     private static final String ATTRIBUTE_PORT = "port";
 
-    private static final String ATTRIBUTE_REF="ref";
+    private static final String ATTRIBUTE_REF = "ref";
 
 
     private static final int PORT_DEFAULT = 3324;
-
-
 
 
     @Override
@@ -91,24 +90,24 @@ public class ZRpcServiceBeanDefinitionParser extends AbstractSingleBeanDefinitio
         }
         builder.addPropertyValue("port", port);
 
-        Object clientRef=null;
+        Object clientRef = null;
 
         NodeList childNodes = element.getChildNodes();
         for (int index = 0; index < childNodes.getLength(); index++) {
             Node item = childNodes.item(index);
-            if(item instanceof Element &&
+            if (item instanceof Element &&
                     item.getLocalName().equals("clientRef") &&
-                    ((Element) item).hasAttribute(ATTRIBUTE_REF)){
-                clientRef= parseRef(parserContext,((Element) item));
+                    ((Element) item).hasAttribute(ATTRIBUTE_REF)) {
+                clientRef = parseRef(parserContext, ((Element) item));
                 break;
             }
         }
 
-        if(clientRef==null){
-            clientRef=new RuntimeBeanReference("client");
+        if (clientRef == null) {
+            clientRef = new RuntimeBeanReference("client");
         }
 
-        builder.addPropertyValue("client",clientRef);
+        builder.addPropertyValue("client", clientRef);
     }
 
     @Override
@@ -120,13 +119,13 @@ public class ZRpcServiceBeanDefinitionParser extends AbstractSingleBeanDefinitio
     @Override
     protected String resolveId(Element element, AbstractBeanDefinition definition, ParserContext parserContext) throws BeanDefinitionStoreException {
         String id = element.getAttribute(ATTRIBUTE_ID);
-        if (!StringUtils.hasText(id)) {
+        if (Strings.isNullOrEmpty(id)) {
             id = parserContext.getReaderContext().generateBeanName(definition);
         }
         return id;
     }
 
-    private Object parseRef(ParserContext parserContext,Element element){
+    private Object parseRef(ParserContext parserContext, Element element) {
         String attribute = element.getAttribute(ATTRIBUTE_REF);
         RuntimeBeanReference reference = new RuntimeBeanReference(attribute);
         reference.setSource(parserContext.extractSource(element));

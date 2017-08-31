@@ -16,6 +16,7 @@
 
 package com.zhuyiren.rpc.spring;
 
+import com.google.common.base.Strings;
 import com.zhuyiren.rpc.common.Server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,7 +25,6 @@ import org.springframework.beans.factory.SmartFactoryBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.util.ClassUtils;
-import org.springframework.util.StringUtils;
 
 /**
  * @author zhuyiren
@@ -60,7 +60,7 @@ public class  ZRpcProviderFactoryBean implements SmartFactoryBean,ApplicationCon
         if(handler==null){
             throw new IllegalStateException("The handler is not set");
         }
-        if(!StringUtils.hasText(serviceName)){
+        if(Strings.isNullOrEmpty(serviceName)){
             Class<?>[] allInterfaces = ClassUtils.getAllInterfaces(handler);
             if(allInterfaces.length==1){
                 serviceName=allInterfaces[0].getCanonicalName();

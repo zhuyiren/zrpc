@@ -18,7 +18,10 @@ package com.zhuyiren.rpc.spring;
 
 import com.zhuyiren.rpc.common.DefaultServer;
 import com.zhuyiren.rpc.common.Server;
+import com.zhuyiren.rpc.engine.Engine;
 import org.springframework.beans.factory.SmartFactoryBean;
+
+import java.util.List;
 
 /**
  * @author zhuyiren
@@ -33,12 +36,14 @@ public class ZRpcServerFactoryBean implements SmartFactoryBean<Server> {
     private Server server;
     private boolean useZip;
     private String zkNamespace;
+    private List<Engine> engines;
 
 
     @Override
     public Server getObject() throws Exception {
         Server server = DefaultServer.newBuilder().host(host)
                 .port(port).zkConnect(zkConnectUrl).zkNamespace(zkNamespace).ioThreadSize(ioThreadSize)
+                .addEngines(engines)
                 .zip(useZip).build();
         this.server = server;
         return server;
@@ -119,5 +124,14 @@ public class ZRpcServerFactoryBean implements SmartFactoryBean<Server> {
 
     public void setZkNamespace(String zkNamespace) {
         this.zkNamespace = zkNamespace;
+    }
+
+
+    public List<Engine> getEngines() {
+        return engines;
+    }
+
+    public void setEngines(List<Engine> engines) {
+        this.engines = engines;
     }
 }
