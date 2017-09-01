@@ -17,6 +17,7 @@
 package com.zhuyiren.rpc.spring;
 
 import com.google.common.base.Strings;
+import com.zhuyiren.rpc.common.ZRpcPropertiesConstant;
 import com.zhuyiren.rpc.engine.Engine;
 import com.zhuyiren.rpc.engine.ProtostuffEngine;
 import org.springframework.beans.factory.BeanDefinitionStoreException;
@@ -45,8 +46,6 @@ public class ZRpcServiceBeanDefinitionParser extends AbstractSingleBeanDefinitio
 
     private static final String ATTRIBUTE_REF = "ref";
 
-
-    private static final int PORT_DEFAULT = 3324;
 
 
     @Override
@@ -84,7 +83,7 @@ public class ZRpcServiceBeanDefinitionParser extends AbstractSingleBeanDefinitio
         builder.addPropertyValue("serviceName", serviceNameAttr);
 
         String portAttr = element.getAttribute(ATTRIBUTE_PORT);
-        int port = PORT_DEFAULT;
+        int port = ZRpcPropertiesConstant.DEFAULT_PORT;
         if (!StringUtils.isEmpty(portAttr)) {
             port = Integer.parseInt(portAttr);
         }
@@ -103,11 +102,9 @@ public class ZRpcServiceBeanDefinitionParser extends AbstractSingleBeanDefinitio
             }
         }
 
-        if (clientRef == null) {
-            clientRef = new RuntimeBeanReference("client");
+        if(clientRef!=null) {
+            builder.addPropertyValue("client", clientRef);
         }
-
-        builder.addPropertyValue("client", clientRef);
     }
 
     @Override
@@ -127,6 +124,9 @@ public class ZRpcServiceBeanDefinitionParser extends AbstractSingleBeanDefinitio
 
     private Object parseRef(ParserContext parserContext, Element element) {
         String attribute = element.getAttribute(ATTRIBUTE_REF);
+        if(Strings.isNullOrEmpty(attribute)){
+            return null;
+        }
         RuntimeBeanReference reference = new RuntimeBeanReference(attribute);
         reference.setSource(parserContext.extractSource(element));
         return reference;

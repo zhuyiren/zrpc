@@ -26,7 +26,7 @@ import org.springframework.context.ApplicationContextAware;
 
 import java.net.InetSocketAddress;
 
-import static com.zhuyiren.rpc.common.CommonConstant.ANY_HOST;
+import static com.zhuyiren.rpc.common.ZRpcPropertiesConstant.ANY_HOST;
 
 /**
  * Created by zhuyiren on 2017/8/2.
@@ -52,6 +52,7 @@ public class ZRpcServiceFactoryBean implements SmartFactoryBean, ApplicationCont
     @Override
     public Object getObject() throws Exception {
         InetSocketAddress address;
+
         if(ANY_HOST.equals(host)){
             throw new IllegalArgumentException("The consumer connect host must not be 0.0.0.0");
         }

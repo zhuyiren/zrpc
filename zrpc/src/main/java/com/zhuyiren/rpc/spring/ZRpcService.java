@@ -1,5 +1,6 @@
 package com.zhuyiren.rpc.spring;
 
+import com.zhuyiren.rpc.common.ZRpcPropertiesConstant;
 import com.zhuyiren.rpc.engine.Engine;
 
 import java.lang.annotation.ElementType;
@@ -21,13 +22,13 @@ public @interface ZRpcService {
 
     Class<?> ifcCls() default Object.class;
 
-    String client() default "client";
+    String client() default "";
 
     Class<? extends Engine> engine() default com.zhuyiren.rpc.engine.ProtostuffEngine.class;
 
     String host() default "";
 
-    int port() default 3324;
+    int port() default ZRpcPropertiesConstant.DEFAULT_PORT;
 
     String serviceName() default "";
 }

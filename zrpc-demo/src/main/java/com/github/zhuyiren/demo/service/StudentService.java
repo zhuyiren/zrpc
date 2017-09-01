@@ -14,27 +14,20 @@
  * limitations under the License.
  */
 
-package com.zhuyiren.rpc.common;
+package com.github.zhuyiren.demo.service;
 
-import com.zhuyiren.rpc.handler.ArgumentHolder;
-import io.protostuff.Schema;
-import io.protostuff.runtime.RuntimeSchema;
+import com.github.zhuyiren.demo.model.TeacherInfo;
+import com.zhuyiren.rpc.spring.ZRpcService;
 
 /**
- * Created by zhuyiren on 2017/8/4.
+ * @author zhuyiren
+ * @date 2017/9/2
  */
-public final class CommonConstant {
+
+@ZRpcService
+public interface StudentService {
 
 
-    public static final Schema<ArgumentHolder> ARGUMENT_HELPER_SCHEMA= RuntimeSchema.getSchema(ArgumentHolder.class);
-
-    public static final Schema<WrapReturn> WRAP_RETURN_SCHEMA =RuntimeSchema.getSchema(WrapReturn.class);
-
-    public static final String IDLE_PING="ping";
-
-    public static final String IDLE_PONG="pong";
-
-    public static final String ANY_HOST="0.0.0.0";
-
+    TeacherInfo getTeacher(int studentId);
 
 }

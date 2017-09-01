@@ -48,10 +48,6 @@
     <xsd:group name="clientElements">
         <xsd:sequence>
             <xsd:element ref="beans:description" minOccurs="0"/>
-            <xsd:choice minOccurs="0" maxOccurs="unbounded">
-                <xsd:element name="engines" type="beans:listOrSetType" minOccurs="0" maxOccurs="1"/>
-            </xsd:choice>
-
         </xsd:sequence>
     </xsd:group>
 
@@ -112,7 +108,7 @@
         <xsd:attribute name="ioThreadSize" type="xsd:positiveInteger"/>
         <xsd:attribute name="useZip" type="xsd:boolean"/>
         <xsd:attribute name="zkConnectUrl" type="xsd:string"/>
-        <xsd:attribute name="zkNamespace" type="xsd:string" use="required"/>
+        <xsd:attribute name="zkNamespace" type="xsd:string"/>
     </xsd:attributeGroup>
 
     

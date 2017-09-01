@@ -91,11 +91,10 @@ public class ZRpcProviderPostProcessor implements BeanFactoryPostProcessor {
         providerBeanDefinition.getPropertyValues().addPropertyValue("port", attrPort);
 
         String attrServer = (String) attributes.get(ATTRIBUTE_SERVER);
-        if (Strings.isNullOrEmpty(attrServer)) {
-            attrServer = "server";
+        if(!Strings.isNullOrEmpty(attrServer)){
+            RuntimeBeanReference serverReference = new RuntimeBeanReference(attrServer);
+            providerBeanDefinition.getPropertyValues().addPropertyValue("server", serverReference);
         }
-        RuntimeBeanReference serverReference = new RuntimeBeanReference(attrServer);
-        providerBeanDefinition.getPropertyValues().addPropertyValue("server", serverReference);
 
         RuntimeBeanReference handlerReference = new RuntimeBeanReference(beanDefinitionHolder.getBeanName());
         providerBeanDefinition.getPropertyValues().addPropertyValue("handler", handlerReference);

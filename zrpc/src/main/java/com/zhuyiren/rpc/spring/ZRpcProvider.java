@@ -1,5 +1,6 @@
 package com.zhuyiren.rpc.spring;
 
+import com.zhuyiren.rpc.common.ZRpcPropertiesConstant;
 import org.springframework.stereotype.Service;
 
 import java.lang.annotation.ElementType;
@@ -23,8 +24,8 @@ public @interface ZRpcProvider {
 
     String host() default "";
 
-    int port() default 3324;
+    int port() default ZRpcPropertiesConstant.DEFAULT_PORT;
 
-    String server() default "server";
+    String server() default "";
 
 }

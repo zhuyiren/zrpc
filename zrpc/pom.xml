@@ -6,7 +6,7 @@
 
 
     <groupId>com.github.zhuyiren</groupId>
-    <artifactId>normal-rpc</artifactId>
+    <artifactId>z-rpc</artifactId>
     <version>1.0.0</version>
     <modelVersion>4.0.0</modelVersion>
 

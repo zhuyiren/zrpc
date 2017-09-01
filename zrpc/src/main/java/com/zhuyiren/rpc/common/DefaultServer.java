@@ -42,7 +42,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.zhuyiren.rpc.common.CommonConstant.ANY_HOST;
+import static com.zhuyiren.rpc.common.ZRpcPropertiesConstant.ANY_HOST;
 
 /**
  * Created by zhuyiren on 2017/5/18.
@@ -53,7 +53,6 @@ public class DefaultServer implements Server {
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultServer.class);
 
 
-    private static final int DEFAULT_PORT = 3324;
     private static final String ZK_SERVICE_PREFIX="node";
     private static final int DEFAULT_IO_THREAD_SIZE = Runtime.getRuntime().availableProcessors();
 
@@ -339,7 +338,7 @@ public class DefaultServer implements Server {
             }
             server.host=host;
             if(port==0){
-                port=DEFAULT_PORT;
+                port=ZRpcPropertiesConstant.DEFAULT_PORT;
             }
             server.port=port;
             /*if(Strings.isNullOrEmpty(zkConnectUrl)){

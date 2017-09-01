@@ -41,7 +41,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
-import static com.zhuyiren.rpc.common.CommonConstant.ANY_HOST;
+import static com.zhuyiren.rpc.common.ZRpcPropertiesConstant.ANY_HOST;
 
 /**
  * Created by zhuyiren on 2017/6/3.

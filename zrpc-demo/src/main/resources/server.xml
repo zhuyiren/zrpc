@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:zrpc="http://www.zhuyiren.com/schema/zrpc"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.zhuyiren.com/schema/zrpc http://www.zhuyiren.com/schema/zrpc/zhuyiren-zrpc.xsd">
+
+
+    <zrpc:server id="testServer" host="192.168.78.1" port="3333"
+                 zkConnectUrl="192.168.78.30:2181" zkNamespace="zrpc-demo" ioThreadSize="4" useZip="false" >
+        <zrpc:engines>
+            <list>
+                <value>com.zhuyiren.rpc.engine.ProtostuffEngine</value>
+                <value>com.zhuyiren.rpc.engine.JsonEngine</value>
+            </list>
+        </zrpc:engines>
+    </zrpc:server>
+
+    <zrpc:provider-scan base-package="com.github.zhuyiren.demo.service"/>
+</beans>

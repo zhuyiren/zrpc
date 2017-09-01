@@ -58,7 +58,7 @@ public class ZRpcServiceScanBeanDefinitionParser implements BeanDefinitionParser
                 ConfigurableApplicationContext.CONFIG_LOCATION_DELIMITERS);
 
         // Actually scan for bean definitions and register them.
-        ClassPathScanningCandidateComponentProvider scanner = configureScanner(parserContext, element);
+        ClassPathScanningCandidateComponentProvider scanner = configureScanner(parserContext);
         try {
             parseAndRegister(parserContext, scanner, basePackages, element);
         } catch (Exception e) {
@@ -68,7 +68,7 @@ public class ZRpcServiceScanBeanDefinitionParser implements BeanDefinitionParser
     }
 
 
-    public ClassPathScanningCandidateComponentProvider configureScanner(ParserContext parserContext, Object source) {
+    private ClassPathScanningCandidateComponentProvider configureScanner(ParserContext parserContext ) {
         ZRpcClassScanner scanner = new ZRpcClassScanner();
         scanner.addIncludeFilter(SERVICE_TYPE_FILTER);
         scanner.setResourceLoader(parserContext.getReaderContext().getResourceLoader());
@@ -77,7 +77,6 @@ public class ZRpcServiceScanBeanDefinitionParser implements BeanDefinitionParser
     }
 
     private void parseAndRegister(ParserContext parserContext, ClassPathScanningCandidateComponentProvider scanner, String[] basePackages, Object source) throws Exception{
-        CompositeComponentDefinition componentDefinition = new CompositeComponentDefinition("compositeServiceFactoryBean", source);
         for (String packageName : basePackages) {
             Set<BeanDefinition> candidateComponents = scanner.findCandidateComponents(packageName);
             for (BeanDefinition candidateComponent : candidateComponents) {
@@ -103,8 +102,10 @@ public class ZRpcServiceScanBeanDefinitionParser implements BeanDefinitionParser
         rootBeanDefinition.getPropertyValues().addPropertyValue("ifcCls",attrIfcCls);
 
         String attrClient = (String)attributes.get("client");
-        RuntimeBeanReference clientReference = new RuntimeBeanReference(attrClient);
-        rootBeanDefinition.getPropertyValues().addPropertyValue("client",clientReference);
+        if(!Strings.isNullOrEmpty(attrClient)){
+            RuntimeBeanReference clientReference = new RuntimeBeanReference(attrClient);
+            rootBeanDefinition.getPropertyValues().addPropertyValue("client",clientReference);
+        }
 
         Object engine = attributes.get("engine");
         rootBeanDefinition.getPropertyValues().addPropertyValue("engine",engine);

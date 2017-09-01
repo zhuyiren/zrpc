@@ -54,7 +54,7 @@ public class  ZRpcProviderFactoryBean implements SmartFactoryBean,ApplicationCon
             if(server==null){
                 throw new IllegalStateException("The server is not set and don't find from the application");
             }else {
-                LOGGER.warn("The server is not set,and will find from application");
+                LOGGER.warn("The server is not set,find the default server for using from application");
             }
         }
         if(handler==null){

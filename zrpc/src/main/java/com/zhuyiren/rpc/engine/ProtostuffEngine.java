@@ -23,8 +23,8 @@ import io.protostuff.ProtostuffIOUtil;
 
 import java.lang.reflect.Type;
 
-import static com.zhuyiren.rpc.common.CommonConstant.ARGUMENT_HELPER_SCHEMA;
-import static com.zhuyiren.rpc.common.CommonConstant.WRAP_RETURN_SCHEMA;
+import static com.zhuyiren.rpc.common.ZRpcPropertiesConstant.ARGUMENT_HELPER_SCHEMA;
+import static com.zhuyiren.rpc.common.ZRpcPropertiesConstant.WRAP_RETURN_SCHEMA;
 
 /**
  * Created by zhuyiren on 2017/6/4.

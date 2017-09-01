@@ -40,7 +40,7 @@ public class ClientIdleHandler extends ChannelInboundHandlerAdapter {
 
     static {
         PING_PACKET = new Packet();
-        PING_PACKET.setType(CommonConstant.IDLE_PING);
+        PING_PACKET.setType(ZRpcPropertiesConstant.IDLE_PING);
     }
 
     public ClientIdleHandler() {

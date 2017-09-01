@@ -34,13 +34,13 @@ public class ServerIdleHandler extends ChannelInboundHandlerAdapter {
 
     static {
         PACKET_PONG=new Packet();
-        PACKET_PONG.setType(CommonConstant.IDLE_PONG);
+        PACKET_PONG.setType(ZRpcPropertiesConstant.IDLE_PONG);
     }
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         if(msg instanceof Packet){
-            if (CommonConstant.IDLE_PING.equals(((Packet) msg).getType())) {
+            if (ZRpcPropertiesConstant.IDLE_PING.equals(((Packet) msg).getType())) {
                 ctx.writeAndFlush(PACKET_PONG);
                 LOGGER.debug("receive a heartbeat");
                 return;
