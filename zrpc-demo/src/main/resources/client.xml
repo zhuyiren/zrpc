@@ -4,7 +4,7 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.zhuyiren.com/schema/zrpc http://www.zhuyiren.com/schema/zrpc/zhuyiren-zrpc.xsd">
 
 
-    <zrpc:client id="testClient" zkConnectUrl="192.168.78.30:2181" useZip="false"
+    <zrpc:client id="demoClient" zkConnectUrl="192.168.78.30:2181" useZip="false"
                  workerThreadCount="4" zkNamespace="zrpc-demo"/>
 
     <zrpc:service-scan base-package="com.github.zhuyiren.demo.service"/>

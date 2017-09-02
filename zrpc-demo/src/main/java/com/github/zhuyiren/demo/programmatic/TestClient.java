@@ -35,8 +35,6 @@ public class TestClient {
         DefaultClient client = new DefaultClient("192.168.78.30:2181", "zrpc-demo", 4, false);
         StudentService studentService = client.exportService(ProtostuffEngine.class, StudentService.class, null);
         TeacherInfo teacher = studentService.getTeacher(3);
-        StudentService local=new StudentServiceImpl();
-        TeacherInfo localTeacher = local.getTeacher(3);
-        System.out.println(teacher.equals(localTeacher));
+        System.out.println(teacher);
     }
 }

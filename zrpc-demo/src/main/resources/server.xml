@@ -4,12 +4,14 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.zhuyiren.com/schema/zrpc http://www.zhuyiren.com/schema/zrpc/zhuyiren-zrpc.xsd">
 
 
-    <zrpc:server id="testServer" host="192.168.78.1" port="3333"
-                 zkConnectUrl="192.168.78.30:2181" zkNamespace="zrpc-demo" ioThreadSize="4" useZip="false" >
+    <zrpc:server id="demoServer" host="192.168.78.1" port="3324" ioThreadSize="16" useZip="false"
+                 zkConnectUrl="192.168.78.30:2181"
+                 zkNamespace="zrpc-demo">
         <zrpc:engines>
             <list>
-                <value>com.zhuyiren.rpc.engine.ProtostuffEngine</value>
                 <value>com.zhuyiren.rpc.engine.JsonEngine</value>
+                <value>com.zhuyiren.rpc.engine.ProtostuffEngine</value>
+                <value>com.zhuyiren.rpc.engine.NormalEngine</value>
             </list>
         </zrpc:engines>
     </zrpc:server>

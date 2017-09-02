@@ -17,14 +17,15 @@
 package com.github.zhuyiren.demo.service;
 
 import com.github.zhuyiren.demo.model.TeacherInfo;
+import com.zhuyiren.rpc.engine.JsonEngine;
+import com.zhuyiren.rpc.engine.ProtostuffEngine;
 import com.zhuyiren.rpc.spring.ZRpcService;
 
 /**
  * @author zhuyiren
  * @date 2017/9/2
  */
-
-@ZRpcService
+@ZRpcService(value = "hostUserService",host = "192.168.78.1",port = 3324,serviceName = "com.github.zhuyiren.demo.service.StudentService",client ="demoClient",engine = ProtostuffEngine.class,ifcCls = StudentService.class)
 public interface StudentService {
 
 

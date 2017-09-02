@@ -25,9 +25,7 @@ import com.zhuyiren.rpc.spring.ZRpcProvider;
  * @author zhuyiren
  * @date 2017/9/2
  */
-
-
-@ZRpcProvider(server = "testServer")
+@ZRpcProvider(value = "userService",host = "192.168.78.1",serviceName = "com.github.zhuyiren.demo.service.StudentService",port = 3324,server = "demoServer")
 public class StudentServiceImpl implements StudentService {
 
 

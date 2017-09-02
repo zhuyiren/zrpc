@@ -20,7 +20,6 @@ import com.google.common.base.Strings;
 import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
-import org.springframework.beans.factory.parsing.CompositeComponentDefinition;
 import org.springframework.beans.factory.support.BeanNameGenerator;
 import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.beans.factory.xml.BeanDefinitionParser;
@@ -62,13 +61,13 @@ public class ZRpcServiceScanBeanDefinitionParser implements BeanDefinitionParser
         try {
             parseAndRegister(parserContext, scanner, basePackages, element);
         } catch (Exception e) {
-            parserContext.getReaderContext().error(e.getMessage(),element);
+            parserContext.getReaderContext().error(e.getMessage(), element);
         }
         return null;
     }
 
 
-    private ClassPathScanningCandidateComponentProvider configureScanner(ParserContext parserContext ) {
+    private ClassPathScanningCandidateComponentProvider configureScanner(ParserContext parserContext) {
         ZRpcClassScanner scanner = new ZRpcClassScanner();
         scanner.addIncludeFilter(SERVICE_TYPE_FILTER);
         scanner.setResourceLoader(parserContext.getReaderContext().getResourceLoader());
@@ -76,14 +75,14 @@ public class ZRpcServiceScanBeanDefinitionParser implements BeanDefinitionParser
         return scanner;
     }
 
-    private void parseAndRegister(ParserContext parserContext, ClassPathScanningCandidateComponentProvider scanner, String[] basePackages, Object source) throws Exception{
+    private void parseAndRegister(ParserContext parserContext, ClassPathScanningCandidateComponentProvider scanner, String[] basePackages, Object source) throws Exception {
         for (String packageName : basePackages) {
             Set<BeanDefinition> candidateComponents = scanner.findCandidateComponents(packageName);
             for (BeanDefinition candidateComponent : candidateComponents) {
                 if (candidateComponent instanceof AnnotatedBeanDefinition) {
                     String beanName = NAME_GENERATOR.generateBeanName(candidateComponent, parserContext.getRegistry());
                     BeanDefinition beanDefinition = parseAttributes(((AnnotatedBeanDefinition) candidateComponent));
-                    parserContext.getRegistry().registerBeanDefinition(beanName,beanDefinition);
+                    parserContext.getRegistry().registerBeanDefinition(beanName, beanDefinition);
                 }
             }
         }
@@ -99,29 +98,29 @@ public class ZRpcServiceScanBeanDefinitionParser implements BeanDefinitionParser
         if (attrIfcCls.equals(Object.class)) {
             attrIfcCls = Class.forName(beanDefinition.getBeanClassName());
         }
-        rootBeanDefinition.getPropertyValues().addPropertyValue("ifcCls",attrIfcCls);
+        rootBeanDefinition.getPropertyValues().addPropertyValue("ifcCls", attrIfcCls);
 
-        String attrClient = (String)attributes.get("client");
-        if(!Strings.isNullOrEmpty(attrClient)){
+        String attrClient = (String) attributes.get("client");
+        if (!Strings.isNullOrEmpty(attrClient)) {
             RuntimeBeanReference clientReference = new RuntimeBeanReference(attrClient);
-            rootBeanDefinition.getPropertyValues().addPropertyValue("client",clientReference);
+            rootBeanDefinition.getPropertyValues().addPropertyValue("client", clientReference);
         }
 
         Object engine = attributes.get("engine");
-        rootBeanDefinition.getPropertyValues().addPropertyValue("engine",engine);
+        rootBeanDefinition.getPropertyValues().addPropertyValue("engine", engine);
 
         Object host = attributes.get("host");
-        rootBeanDefinition.getPropertyValues().addPropertyValue("host",host);
+        rootBeanDefinition.getPropertyValues().addPropertyValue("host", host);
 
         Object port = attributes.get("port");
-        rootBeanDefinition.getPropertyValues().addPropertyValue("port",port);
+        rootBeanDefinition.getPropertyValues().addPropertyValue("port", port);
 
 
-        String serviceName= ((String) attributes.get("serviceName"));
-        if(Strings.isNullOrEmpty(serviceName)){
-            serviceName=attrIfcCls.getCanonicalName();
+        String serviceName = ((String) attributes.get("serviceName"));
+        if (Strings.isNullOrEmpty(serviceName)) {
+            serviceName = attrIfcCls.getCanonicalName();
         }
-        rootBeanDefinition.getPropertyValues().addPropertyValue("serviceName",serviceName);
+        rootBeanDefinition.getPropertyValues().addPropertyValue("serviceName", serviceName);
         return rootBeanDefinition;
     }
 }
