@@ -30,24 +30,18 @@ import java.util.concurrent.ConcurrentHashMap;
 public class DefaultInvoker implements Invoker {
 
 
-    private volatile CallHandler callHandler;
+    private final LoadBalanceStrategy strategy;
     private String serviceName;
     private Engine engine;
     private Map<Method,Class[]> methodMap;
 
-    public DefaultInvoker(String serviceName) {
+    public DefaultInvoker(String serviceName,Engine engine,LoadBalanceStrategy strategy) {
         this.serviceName = serviceName;
+        this.strategy=strategy;
+        this.engine=engine;
         methodMap=new ConcurrentHashMap<>();
     }
 
-    public void setCallHandler(CallHandler callHandler) {
-        this.callHandler = callHandler;
-    }
-
-    @Override
-    public void setServiceName(String serviceName) {
-        this.serviceName = serviceName;
-    }
 
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
@@ -69,18 +63,15 @@ public class DefaultInvoker implements Invoker {
         byte[] requestEntity = engine.encodeArgument(argumentHolder);
         Packet request = new Packet(serviceName, engine.getType(), method.getName(), requestEntity);
         Call call = new Call(request);
+        CallHandler callHandler = strategy.doSelect(serviceName);
+        if(callHandler==null){
+            throw new IllegalStateException("Can't find valid provider to do");
+        }
         callHandler.call(call);
         if (call.getException() != null) {
             throw call.getException();
         }
-
         WrapReturn wrapReturn = engine.decodeResult(call.getResponse().getEntity(), method.getGenericReturnType());
         return wrapReturn.getResult();
-    }
-
-
-    @Override
-    public void setEngine(Engine engine) {
-        this.engine = engine;
     }
 }

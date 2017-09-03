@@ -27,12 +27,4 @@ import java.lang.reflect.InvocationHandler;
 public interface Invoker extends InvocationHandler {
 
 
-    void setCallHandler(CallHandler callHandler);
-
-    void setServiceName(String serviceName);
-
-    void setEngine(Engine engine);
-
-
-
 }

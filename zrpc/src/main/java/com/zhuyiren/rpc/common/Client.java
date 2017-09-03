@@ -17,8 +17,10 @@
 package com.zhuyiren.rpc.common;
 
 import com.zhuyiren.rpc.engine.Engine;
+import com.zhuyiren.rpc.handler.LoadBalanceStrategy;
 
 import java.net.SocketAddress;
+import java.util.List;
 
 /**
  * RPC客户端，导出服务和序列化引擎在这里管理。
@@ -31,11 +33,11 @@ public interface Client {
      * 导出服务类
      * @param engineType 序列化引擎
      * @param service 服务接口类型，必须是{@code interface}类型，否则抛出异常
-     * @param address 服务地址
+     * @param addresses 服务地址
      * @return 如果成功，返回服务,否则抛出异常
      * @throws Exception
      */
-    <T> T exportService(Class<? extends Engine> engineType, Class<T> service, SocketAddress address) throws Exception;
+    <T> T exportService(Class<? extends Engine> engineType, Class<T> service, List<SocketAddress> addresses) throws Exception;
 
 
     /**
@@ -43,11 +45,11 @@ public interface Client {
      * @param engineType 序列化引擎
      * @param service 服务接口类型，必须是{@code interface}类型，否则抛出异常
      * @param serviceName 服务名称
-     * @param address 服务地址
+     * @param addresses 服务地址
      * @return 如果成功，返回服务,否则抛出异常
      * @throws Exception
      */
-    <T> T exportService(Class<? extends Engine> engineType, Class<T> service,String serviceName, SocketAddress address ) throws Exception;
+    <T> T exportService(Class<? extends Engine> engineType, Class<T> service,String serviceName, List<SocketAddress> addresses) throws Exception;
 
 
     Engine addEngineByClass(Class<? extends Engine> engineClass) throws Exception;
@@ -55,6 +57,10 @@ public interface Client {
     Engine addEngine(Engine engine);
 
     void shutdown();
+
+    LoadBalanceStrategy getLoadBalanceStrategy(LoadBalanceType type);
+
+    void registerLoadBalance(LoadBalanceType type,LoadBalanceStrategy strategy);
 
 
 }

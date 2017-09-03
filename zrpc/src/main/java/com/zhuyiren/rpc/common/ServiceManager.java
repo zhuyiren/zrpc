@@ -16,16 +16,23 @@
 
 package com.zhuyiren.rpc.common;
 
+import java.net.Socket;
 import java.net.SocketAddress;
+import java.util.List;
 
 /**
  * @author zhuyiren
  * @date 2017/8/21
  */
-public interface ServiceManage {
+public interface ServiceManager {
 
-    SocketAddress getChangedAddress(String serviceName) throws Exception;
+    List<SocketAddress> extractProviderAddress(String serviceName) throws Exception;
 
     boolean watchService(String serviceName);
+
+    List<SocketAddress> getServiceProviderAddress(String serviceName);
+
+
+    LoadBalanceType getLoadBalanceType(String serviceName);
 
 }

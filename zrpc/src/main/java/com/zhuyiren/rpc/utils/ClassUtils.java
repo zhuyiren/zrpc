@@ -23,7 +23,7 @@ import java.util.Map;
 /**
  * Created by zhuyiren on 2017/5/20.
  */
-public class ClassUtils {
+public final class ClassUtils {
 
     private static final Map<Class<?>,Class<?>> primitiveMapped;
 
@@ -37,6 +37,11 @@ public class ClassUtils {
         primitiveMapped.put(float.class,Float.class);
         primitiveMapped.put(long.class,Long.class);
         primitiveMapped.put(double.class,Double.class);
+    }
+
+
+    private ClassUtils(){
+
     }
 
 

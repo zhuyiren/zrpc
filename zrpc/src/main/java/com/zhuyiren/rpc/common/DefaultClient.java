@@ -18,10 +18,8 @@ package com.zhuyiren.rpc.common;
 
 import com.google.common.base.Strings;
 import com.zhuyiren.rpc.engine.Engine;
-import com.zhuyiren.rpc.handler.CallHandler;
-import com.zhuyiren.rpc.handler.DefaultCallHandler;
-import com.zhuyiren.rpc.handler.DefaultInvoker;
-import com.zhuyiren.rpc.handler.Invoker;
+import com.zhuyiren.rpc.handler.*;
+import com.zhuyiren.rpc.utils.CommonUtils;
 import io.netty.channel.nio.NioEventLoopGroup;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
@@ -36,17 +34,18 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.Proxy;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-
-import static com.zhuyiren.rpc.common.ZRpcPropertiesConstant.ANY_HOST;
+import java.util.stream.Collectors;
 
 /**
  * Created by zhuyiren on 2017/6/3.
  */
-public class DefaultClient implements Client, ServiceManage, CallHandlerManager {
+public class DefaultClient implements Client, ServiceManager, CallHandlerManager {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultClient.class);
 
@@ -56,6 +55,7 @@ public class DefaultClient implements Client, ServiceManage, CallHandlerManager 
     private Map<SocketAddress, CallHandler> callerMap;
     private Map<String, ServiceInformation> serviceInfoMaps;
     private Map<String, Invoker> invokerMap;
+    private Map<LoadBalanceType, LoadBalanceStrategy> loadBalanceStrategyMap;
 
     private NioEventLoopGroup eventExecutors;
     private ScheduledExecutorService connectThread;
@@ -73,46 +73,31 @@ public class DefaultClient implements Client, ServiceManage, CallHandlerManager 
                 String childPath = pathChildrenCacheEvent.getData().getPath();
                 String serviceName = getServiceByPath(childPath);
 
-                try {
-                    ServiceInformation serviceInfo = serviceInfoMaps.get(serviceName);
-                    if (serviceInfo == null || !serviceInfo.isManageByZookeeper) {
-                        return;
-                    }
-                    SocketAddress oldAddress = serviceInfo.address;
-                    SocketAddress newAddress = getChangedAddress(serviceName);
 
-
-                    LOGGER.debug("The service:[" + serviceName + "] is changed,the new address:[" + newAddress + "]");
-
-                    CallHandler oldCaller;
-                    CallHandler newCaller;
-
-                    if (newAddress == null) {
-                        oldCaller = oldAddress == null ? null : callerMap.get(oldAddress);
-                        if (oldCaller != null) {
-                            if (oldCaller.setServiceState(serviceName, false)) {
-                                removeCaller(oldCaller);
-                            }
-                        }
-                        serviceInfoMaps.put(serviceName, new ServiceInformation(serviceName, true, null));
-                        return;
-                    }
-                    newCaller = callerMap.get(newAddress);
-                    oldCaller = oldAddress == null ? null : callerMap.get(oldAddress);
-                    if (newCaller == null) {
-                        newCaller = createCaller(newAddress);
-                    }
-                    newCaller.setServiceState(serviceName, true);
-                    serviceInfoMaps.put(serviceName, new ServiceInformation(serviceName, true, newAddress));
-                    invokerMap.get(serviceName).setCallHandler(newCaller);
-                    if (!newCaller.equals(oldCaller) && oldCaller != null) {
-                        if (oldCaller.setServiceState(serviceName, false)) {
-                            removeCaller(oldCaller);
-                        }
-                    }
-                } catch (Exception e) {
-                    LOGGER.error(e.getMessage(), e);
+                ServiceInformation originalServiceInfo = serviceInfoMaps.get(serviceName);
+                if (originalServiceInfo == null || !originalServiceInfo.isManageByZookeeper()) {
+                    return;
                 }
+                List<SocketAddress> originalAddresses = originalServiceInfo.getAddresses();
+                List<SocketAddress> newAddresses = extractProviderAddress(serviceName);
+
+                List<SocketAddress> removeAddresses = new ArrayList<>(originalAddresses);
+                List<SocketAddress> addAddresses = new ArrayList<>(newAddresses);
+
+                removeAddresses.removeAll(newAddresses);
+                addAddresses.removeAll(originalAddresses);
+
+                for (SocketAddress removeAddress : removeAddresses) {
+                    CallHandler handler = callerMap.get(removeAddress);
+                    if (handler != null) {
+                        if (handler.setServiceState(serviceName, false)) {
+                            removeCaller(handler);
+                        }
+                    }
+                }
+
+                createCallWithService(serviceName, addAddresses);
+
             }
         }
     };
@@ -122,7 +107,11 @@ public class DefaultClient implements Client, ServiceManage, CallHandlerManager 
     }
 
     public DefaultClient(int ioThreadSize) {
-        this(null, null, ioThreadSize);
+        this(ioThreadSize, false);
+    }
+
+    public DefaultClient(int ioThreadSize, boolean useZip) {
+        this(null, null, ioThreadSize, useZip);
     }
 
     public DefaultClient(String zkConnectUrl, String zkNamespace, int threadSize) {
@@ -134,6 +123,7 @@ public class DefaultClient implements Client, ServiceManage, CallHandlerManager 
         callerMap = new ConcurrentHashMap<>();
         serviceInfoMaps = new ConcurrentHashMap<>();
         invokerMap = new ConcurrentHashMap<>();
+        loadBalanceStrategyMap = new ConcurrentHashMap<>();
         eventExecutors = ioThreadSize == 0 ? new NioEventLoopGroup() : new NioEventLoopGroup(ioThreadSize);
         LOGGER.debug("io thread size:" + eventExecutors.executorCount());
         connectThread = Executors.newScheduledThreadPool(1);
@@ -148,54 +138,72 @@ public class DefaultClient implements Client, ServiceManage, CallHandlerManager 
 
 
     @Override
-    public synchronized <T> T exportService(Class<? extends Engine> engineType, Class<T> service, SocketAddress address) throws Exception {
-        return exportService(engineType, service, service.getCanonicalName(), address);
+    public synchronized <T> T exportService(Class<? extends Engine> engineType, Class<T> service, List<SocketAddress> addresses) throws Exception {
+        return exportService(engineType, service, service.getCanonicalName(), addresses);
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public synchronized <T> T exportService(Class<? extends Engine> engineType, Class<T> service, String serviceName, SocketAddress address) throws Exception {
+    public synchronized <T> T exportService(Class<? extends Engine> engineType, Class<T> service, String serviceName, List<SocketAddress> addresses) throws Exception {
 
-        if (address != null && address instanceof InetSocketAddress) {
-            if (ANY_HOST.equals(((InetSocketAddress) address).getAddress().getHostAddress())) {
-                throw new IllegalArgumentException("The address must not be 0.0.0.0");
-            }
+        if (addresses != null && addresses.size() > 0) {
+            CommonUtils.checkNoAnyHost(addresses);
         }
+
         Engine engine = findEngineByType(engineType);
         if (engine == null) {
             engine = addEngineByClass(engineType);
         }
-        Invoker invoker = new DefaultInvoker(serviceName);
-        invoker.setEngine(engine);
 
         //采用zookeeper管理服务
         boolean isZkManage = false;
-        if (address == null) {
+        if (addresses == null || addresses.size() == 0) {
             isZkManage = true;
-            address = getChangedAddress(serviceName);
+            addresses = extractProviderAddress(serviceName);
         }
-        if (address == null) {
-            throw new IllegalArgumentException("Can't get provider service address");
+
+
+        LoadBalanceType loadBalanceType = getLoadBalanceType(serviceName);
+
+        LoadBalanceStrategy loadBalanceStrategy = loadBalanceStrategyMap.get(loadBalanceType);
+        if (loadBalanceStrategy == null) {
+            LOGGER.warn("Can't find the load balance strategy for [" + loadBalanceType + "],and will use RANDOM strategy");
+            loadBalanceStrategy = new RandomLoadBalanceStrategy(this, this);
         }
-        ServiceInformation serviceInfo = new ServiceInformation(serviceName, isZkManage, address);
+        Invoker invoker = new DefaultInvoker(serviceName, engine, loadBalanceStrategy);
+
+
+        List<SocketAddress> connectedAddresses=createCallWithService(serviceName, addresses);
+
+        ServiceInformation serviceInfo = new ServiceInformation(serviceName, loadBalanceType, isZkManage, connectedAddresses);
         serviceInfoMaps.put(serviceName, serviceInfo);
-
-
-        CallHandler callHandler = callerMap.get(address);
-        if (callHandler == null) {
-            callHandler = createCaller(address);
-        }
-        callHandler.setServiceState(serviceName, true);
-        invoker.setCallHandler(callHandler);
         invokerMap.put(serviceName, invoker);
         Object o = Proxy.newProxyInstance(Engine.class.getClassLoader(), new Class[]{service}, invoker);
 
-        if (serviceInfo.isManageByZookeeper) {
+        if (serviceInfo.isManageByZookeeper()) {
             watchService(serviceName);
         }
         return (T) o;
     }
 
+
+    private List<SocketAddress> createCallWithService(String serviceName, List<SocketAddress> addresses){
+        List<SocketAddress> really=new ArrayList<>();
+        for (SocketAddress address : addresses) {
+            CallHandler callHandler = callerMap.get(address);
+            if (callHandler == null) {
+                try {
+                    callHandler = createCaller(address);
+                } catch (Exception e) {
+                    LOGGER.warn("Can't connect to ["+address+"]");
+                    continue;
+                }
+            }
+            really.add(address);
+            callHandler.setServiceState(serviceName, true);
+        }
+        return really;
+    }
 
     private Engine findEngineByType(Class<? extends Engine> engineType) {
         for (Engine engine : engines) {
@@ -220,7 +228,11 @@ public class DefaultClient implements Client, ServiceManage, CallHandlerManager 
         callerMap.remove(remoteAddress);
         callHandler.shutdown();
         return callHandler;
+    }
 
+    @Override
+    public CallHandler getCallHandler(SocketAddress address) {
+        return callerMap.get(address);
     }
 
     /**
@@ -254,6 +266,16 @@ public class DefaultClient implements Client, ServiceManage, CallHandlerManager 
 
 
     @Override
+    public LoadBalanceStrategy getLoadBalanceStrategy(LoadBalanceType type) {
+        return loadBalanceStrategyMap.get(type);
+    }
+
+    @Override
+    public void registerLoadBalance(LoadBalanceType type, LoadBalanceStrategy strategy) {
+        loadBalanceStrategyMap.put(type, strategy);
+    }
+
+    @Override
     public boolean watchService(String serviceName) {
         String path = "/" + serviceName.replaceAll("\\.", "/");
         PathChildrenCache cache = new PathChildrenCache(zkClient, path, true);
@@ -265,70 +287,79 @@ public class DefaultClient implements Client, ServiceManage, CallHandlerManager 
             LOGGER.error(e.getMessage(), e);
             return false;
         }
+    }
+
+    @Override
+    public List<SocketAddress> getServiceProviderAddress(String serviceName) {
+        ServiceInformation information = serviceInfoMaps.get(serviceName);
+        if (information == null) {
+            return new ArrayList<>();
+        }
+        return information.getAddresses();
+    }
+
+    @Override
+    public LoadBalanceType getLoadBalanceType(String serviceName) {
+
+        ServiceInformation originalInformation = serviceInfoMaps.get(serviceName);
+        LoadBalanceType loadBalance = null;
+        if (originalInformation != null) {
+            loadBalance = originalInformation.getLoadBalanceType();
+        } else {
+            if (zkClient == null || zkClient.getState() != CuratorFrameworkState.STARTED) {
+                LOGGER.warn("The zookeeper is not connecting,The load balance will use RANDOM type");
+                loadBalance = LoadBalanceType.RANDOM;
+            } else {
+                String path = "/" + serviceName.replaceAll("\\.", "/");
+                String loadTypeString = null;
+                try {
+                    loadTypeString = new String(zkClient.getData().forPath(path));
+                    loadBalance = LoadBalanceType.of(loadTypeString);
+                } catch (IllegalArgumentException e) {
+                    LOGGER.warn("The register load balance type [" + loadTypeString + "] is not valid,The load balance will use RANDOM type");
+                    loadBalance = loadBalance.RANDOM;
+                } catch (Exception e) {
+                    LOGGER.warn("Extract load balance type from zookeeper occur error,The load balance will use RANDOM type");
+                    loadBalance = LoadBalanceType.RANDOM;
+                }
+            }
+        }
+        return loadBalance;
 
     }
 
     @Override
-    public SocketAddress getChangedAddress(String serviceName) throws Exception {
+    public List<SocketAddress> extractProviderAddress(String serviceName) throws Exception {
         if (zkClient == null || zkClient.getState() != CuratorFrameworkState.STARTED) {
             throw new IllegalStateException("The [" + serviceName + "] is not configuration provider address,and the client is not connecting zookeeper");
         }
         String path = "/" + serviceName.replaceAll("\\.", "/");
+
         List<String> childNames = zkClient.getChildren().forPath(path);
-        if (childNames == null || childNames.size() == 0) {
-            return null;
-        }
+
         return generateOptimal(path, childNames);
 
     }
 
-    private SocketAddress generateOptimal(String parentPath, List<String> childNames) throws Exception {
+    private List<SocketAddress> generateOptimal(String parentPath, List<String> childNames) throws Exception {
         List<String> configs = new ArrayList<>();
         for (String childName : childNames) {
             String s = new String(zkClient.getData().forPath(parentPath + "/" + childName));
             configs.add(s);
         }
-        String targetConfig = Collections.max(configs, (o1, o2) -> {
-            int temp1 = Integer.parseInt(o1.substring(o1.lastIndexOf(":") + 1));
-            int temp2 = Integer.parseInt(o2.substring(o2.lastIndexOf(":") + 1));
-            return temp1 - temp2;
-        });
-        int hostIndex = targetConfig.indexOf(":");
-        String host = targetConfig.substring(0, hostIndex);
-        int portIndex = targetConfig.indexOf(":", hostIndex + 1);
-        int port = Integer.parseInt(targetConfig.substring(hostIndex + 1, portIndex));
-        return new InetSocketAddress(host, port);
+
+        return configs.stream().map(s -> {
+            int hostIndex = s.indexOf(":");
+            String host = s.substring(0, hostIndex);
+            int portIndex = s.indexOf(":", hostIndex + 1);
+            int port = Integer.parseInt(s.substring(hostIndex + 1, portIndex));
+            return new InetSocketAddress(host, port);
+        }).distinct().collect(Collectors.toList());
     }
 
 
     private String getServiceByPath(String fullPath) {
         String parentPath = fullPath.substring(0, fullPath.lastIndexOf("/"));
         return parentPath.substring(1).replaceAll("/", "\\.");
-    }
-
-    private final static class ServiceInformation {
-        private final String serviceName;
-        private final boolean isManageByZookeeper;
-        private final SocketAddress address;
-
-        public ServiceInformation(String serviceName, boolean isManageByZookeeper, SocketAddress address) {
-            this.serviceName = serviceName;
-            this.isManageByZookeeper = isManageByZookeeper;
-            this.address = address;
-        }
-
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (!(o instanceof ServiceInformation)) return false;
-            ServiceInformation that = (ServiceInformation) o;
-            return Objects.equals(serviceName, that.serviceName);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(serviceName);
-        }
     }
 }

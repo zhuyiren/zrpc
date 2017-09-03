@@ -19,12 +19,15 @@ package com.zhuyiren.rpc.spring;
 import com.google.common.base.Strings;
 import com.zhuyiren.rpc.common.Client;
 import com.zhuyiren.rpc.engine.Engine;
+import com.zhuyiren.rpc.utils.CommonUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.SmartFactoryBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.util.List;
 
 import static com.zhuyiren.rpc.common.ZRpcPropertiesConstant.ANY_HOST;
 
@@ -37,8 +40,7 @@ public class ZRpcServiceFactoryBean implements SmartFactoryBean, ApplicationCont
     private Class<?> ifcCls;
     private Client client;
     private Class<? extends Engine> engine;
-    private String host;
-    private int port;
+    private List<SocketAddress> addresses;
     private String serviceName;
 
     private ApplicationContext context;
@@ -51,21 +53,16 @@ public class ZRpcServiceFactoryBean implements SmartFactoryBean, ApplicationCont
 
     @Override
     public Object getObject() throws Exception {
-        InetSocketAddress address;
 
-        if(ANY_HOST.equals(host)){
-            throw new IllegalArgumentException("The consumer connect host must not be 0.0.0.0");
+        if(addresses!=null && addresses.size()>0) {
+            CommonUtils.checkNoAnyHost(addresses);
         }
-        if (Strings.isNullOrEmpty(host)) {
-            address = null;
-        } else {
-            address = new InetSocketAddress(host, port);
-        }
+
 
         if (client == null) {
             this.client = context.getBean(Client.class);
         }
-        return client.exportService(engine, ifcCls, serviceName, address);
+        return client.exportService(engine, ifcCls, serviceName, addresses);
     }
 
     @Override
@@ -115,26 +112,14 @@ public class ZRpcServiceFactoryBean implements SmartFactoryBean, ApplicationCont
         this.engine = engine;
     }
 
-    public String getHost() {
-        return host;
+
+    public List<SocketAddress> getAddresses() {
+        return addresses;
     }
 
-    public void setHost(String host) {
-        this.host = host;
+    public void setAddresses(List<SocketAddress> addresses) {
+        this.addresses = addresses;
     }
-
-
-    public int getPort() {
-        return port;
-    }
-
-    public void setPort(int port) {
-        this.port = port;
-    }
-
-
-
-
 
     public String getServiceName() {
         return serviceName;
