@@ -16,31 +16,28 @@
 
 package com.zhuyiren.rpc.common;
 
-import io.netty.util.concurrent.EventExecutorGroup;
-
 import java.net.SocketAddress;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 
 /**
- * Created by zhuyiren on 2017/5/18.
+ * @author zhuyiren
+ * @date 2017/9/4
  */
-public interface Server {
+public class ProviderLoadBalanceConfig {
 
-    boolean register(String serviceName, Object handler, String type, String host,int port);
+    private final SocketAddress address;
+    private final int weight;
+
+    public ProviderLoadBalanceConfig(SocketAddress address, int weight) {
+        this.address = address;
+        this.weight = weight;
+    }
 
 
-    boolean register(String serviceName,Object handler,String type);
+    public SocketAddress getAddress() {
+        return address;
+    }
 
-    boolean register(String serviceName, Object handler);
-
-    boolean start(SocketAddress address) throws IllegalArgumentException;
-
-    boolean shutdown();
-
-    Map<String,Object> getServices(SocketAddress address);
-
-    EventExecutorGroup getBusinessExecutors();
-
+    public int getWeight() {
+        return weight;
+    }
 }

@@ -1,6 +1,7 @@
 package com.zhuyiren.rpc.handler;
 
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.List;
 
 /**
@@ -10,6 +11,10 @@ import java.util.List;
 public interface LoadBalanceStrategy {
 
 
-    CallHandler doSelect(String serviceName);
+    void init(String serviceName);
+
+    CallHandler doSelect();
+
+    String getType();
 
 }

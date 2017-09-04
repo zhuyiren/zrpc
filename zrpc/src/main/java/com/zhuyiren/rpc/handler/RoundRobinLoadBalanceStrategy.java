@@ -21,6 +21,7 @@ import com.zhuyiren.rpc.common.ServiceManager;
 
 import java.net.SocketAddress;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * @author zhuyiren
@@ -28,9 +29,11 @@ import java.util.List;
  */
 public class RoundRobinLoadBalanceStrategy implements LoadBalanceStrategy {
 
+    public static final String LOAD_BALANCE_TYPE="roundRobin";
 
     private final ServiceManager serviceManager;
     private final CallHandlerManager callHandlerManager;
+    private volatile List<SocketAddress> addresses;
     private volatile long currentIndex;
 
     public RoundRobinLoadBalanceStrategy(ServiceManager serviceManager,CallHandlerManager callHandlerManager){
@@ -39,15 +42,23 @@ public class RoundRobinLoadBalanceStrategy implements LoadBalanceStrategy {
         currentIndex=0;
     }
 
-
+    @Override
+    public void init(String serviceName) {
+        List<SocketAddress> temp = serviceManager.getServiceProviderAddress(serviceName);
+        addresses=new CopyOnWriteArrayList<>(temp);
+    }
 
     @Override
-    public CallHandler doSelect(String serviceName) {
-        List<SocketAddress> providerAddress = serviceManager.getServiceProviderAddress(serviceName);
-        int length = providerAddress.size();
+    public String getType() {
+        return LOAD_BALANCE_TYPE;
+    }
+
+    @Override
+    public CallHandler doSelect() {
+        int length = addresses.size();
         if(length==0){
             return null;
         }
-        return callHandlerManager.getCallHandler(providerAddress.get((int) (currentIndex++ % length)));
+        return callHandlerManager.getCallHandler(addresses.get((int) (currentIndex++ % length)));
     }
 }

@@ -43,7 +43,6 @@ public class ZRpcServiceBeanDefinitionParser extends AbstractSingleBeanDefinitio
     private static final String ATTRIBUTE_HOST = "host";
     private static final String ATTRIBUTE_SERVICE_NAME = "serviceName";
     private static final String ATTRIBUTE_PORT = "port";
-
     private static final String ATTRIBUTE_REF = "ref";
 
 

@@ -58,9 +58,9 @@ public interface Client {
 
     void shutdown();
 
-    LoadBalanceStrategy getLoadBalanceStrategy(LoadBalanceType type);
+    LoadBalanceStrategy getLoadBalanceStrategy(String type);
 
-    void registerLoadBalance(LoadBalanceType type,LoadBalanceStrategy strategy);
+    void registerLoadBalance(Class<? extends LoadBalanceStrategy> strategy);
 
 
 }

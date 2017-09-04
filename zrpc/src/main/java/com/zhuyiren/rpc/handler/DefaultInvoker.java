@@ -30,7 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class DefaultInvoker implements Invoker {
 
 
-    private final LoadBalanceStrategy strategy;
+    private volatile LoadBalanceStrategy strategy;
     private String serviceName;
     private Engine engine;
     private Map<Method,Class[]> methodMap;
@@ -63,7 +63,7 @@ public class DefaultInvoker implements Invoker {
         byte[] requestEntity = engine.encodeArgument(argumentHolder);
         Packet request = new Packet(serviceName, engine.getType(), method.getName(), requestEntity);
         Call call = new Call(request);
-        CallHandler callHandler = strategy.doSelect(serviceName);
+        CallHandler callHandler = strategy.doSelect();
         if(callHandler==null){
             throw new IllegalStateException("Can't find valid provider to do");
         }
@@ -73,5 +73,15 @@ public class DefaultInvoker implements Invoker {
         }
         WrapReturn wrapReturn = engine.decodeResult(call.getResponse().getEntity(), method.getGenericReturnType());
         return wrapReturn.getResult();
+    }
+
+    @Override
+    public void setLoadBalanceStrategy(LoadBalanceStrategy strategy) {
+        this.strategy=strategy;
+    }
+
+    @Override
+    public LoadBalanceStrategy getLoadBalanceStrategy() {
+        return strategy;
     }
 }

@@ -42,6 +42,7 @@ public class ZRpcProviderPostProcessor implements BeanFactoryPostProcessor {
     private static final String ATTRIBUTE_HOST = "host";
     private static final String ATTRIBUTE_PORT = "port";
     private static final String ATTRIBUTE_SERVER = "server";
+    private static final String ATTRIBUTE_LOAD_BALANCE_TYPE = "loadBalanceType";
 
     private BeanNameGenerator nameGenerator = new DefaultBeanNameGenerator();
 
@@ -53,12 +54,12 @@ public class ZRpcProviderPostProcessor implements BeanFactoryPostProcessor {
         String[] names = beanFactory.getBeanDefinitionNames();
         for (String beanName : names) {
             BeanDefinition beanDefinition = beanFactory.getBeanDefinition(beanName);
-            if (beanDefinition instanceof AnnotatedBeanDefinition) {
+            if (beanDefinition instanceof AnnotatedBeanDefinition
+                    && ((AnnotatedBeanDefinition) beanDefinition).getMetadata().getAnnotationTypes().contains(ZRpcProvider.class.getCanonicalName())) {
                 try {
                     registerProviderFactoryBeanDefinition(new BeanDefinitionHolder(beanDefinition, beanName), ((BeanDefinitionRegistry) beanFactory));
-
                 } catch (ClassNotFoundException e) {
-                    LOGGER.error(e.getMessage(),e);
+                    LOGGER.error(e.getMessage(), e);
                 }
             }
         }
@@ -69,7 +70,7 @@ public class ZRpcProviderPostProcessor implements BeanFactoryPostProcessor {
      * @param beanDefinitionHolder
      * @param registry
      */
-    private void registerProviderFactoryBeanDefinition(BeanDefinitionHolder beanDefinitionHolder, BeanDefinitionRegistry registry) throws ClassNotFoundException{
+    private void registerProviderFactoryBeanDefinition(BeanDefinitionHolder beanDefinitionHolder, BeanDefinitionRegistry registry) throws ClassNotFoundException {
         AnnotatedBeanDefinition beanDefinition = (AnnotatedBeanDefinition) beanDefinitionHolder.getBeanDefinition();
 
         RootBeanDefinition providerBeanDefinition = new RootBeanDefinition();
@@ -91,7 +92,7 @@ public class ZRpcProviderPostProcessor implements BeanFactoryPostProcessor {
         providerBeanDefinition.getPropertyValues().addPropertyValue("port", attrPort);
 
         String attrServer = (String) attributes.get(ATTRIBUTE_SERVER);
-        if(!Strings.isNullOrEmpty(attrServer)){
+        if (!Strings.isNullOrEmpty(attrServer)) {
             RuntimeBeanReference serverReference = new RuntimeBeanReference(attrServer);
             providerBeanDefinition.getPropertyValues().addPropertyValue("server", serverReference);
         }
@@ -99,7 +100,8 @@ public class ZRpcProviderPostProcessor implements BeanFactoryPostProcessor {
         RuntimeBeanReference handlerReference = new RuntimeBeanReference(beanDefinitionHolder.getBeanName());
         providerBeanDefinition.getPropertyValues().addPropertyValue("handler", handlerReference);
 
-
+        String loadBalanceType = (String) attributes.get(ATTRIBUTE_LOAD_BALANCE_TYPE);
+        providerBeanDefinition.getPropertyValues().addPropertyValue("loadBalanceType", loadBalanceType);
         registry.registerBeanDefinition(nameGenerator.generateBeanName(providerBeanDefinition, registry), providerBeanDefinition);
     }
 

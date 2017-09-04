@@ -19,6 +19,7 @@ package com.zhuyiren.rpc.common;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author zhuyiren
@@ -26,13 +27,13 @@ import java.util.List;
  */
 public interface ServiceManager {
 
-    List<SocketAddress> extractProviderAddress(String serviceName) throws Exception;
+    Map<SocketAddress,ProviderLoadBalanceConfig> extractProviderAddress(String serviceName) throws Exception;
 
     boolean watchService(String serviceName);
 
     List<SocketAddress> getServiceProviderAddress(String serviceName);
 
+    List<ProviderLoadBalanceConfig> getProviderLoadBalanceConfigs(String serviceName);
 
-    LoadBalanceType getLoadBalanceType(String serviceName);
 
 }

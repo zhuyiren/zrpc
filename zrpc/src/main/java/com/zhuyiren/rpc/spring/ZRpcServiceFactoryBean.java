@@ -16,7 +16,6 @@
 
 package com.zhuyiren.rpc.spring;
 
-import com.google.common.base.Strings;
 import com.zhuyiren.rpc.common.Client;
 import com.zhuyiren.rpc.engine.Engine;
 import com.zhuyiren.rpc.utils.CommonUtils;
@@ -25,11 +24,8 @@ import org.springframework.beans.factory.SmartFactoryBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
-import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.List;
-
-import static com.zhuyiren.rpc.common.ZRpcPropertiesConstant.ANY_HOST;
 
 /**
  * Created by zhuyiren on 2017/8/2.
@@ -54,7 +50,7 @@ public class ZRpcServiceFactoryBean implements SmartFactoryBean, ApplicationCont
     @Override
     public Object getObject() throws Exception {
 
-        if(addresses!=null && addresses.size()>0) {
+        if (addresses != null && addresses.size() > 0) {
             CommonUtils.checkNoAnyHost(addresses);
         }
 

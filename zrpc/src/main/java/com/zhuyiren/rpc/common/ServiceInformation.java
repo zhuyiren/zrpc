@@ -31,17 +31,17 @@ public class ServiceInformation {
 
     private final String serviceName;
     private final boolean isManageByZookeeper;
-    private final LoadBalanceType loadBalanceType;
-    private final ImmutableList<SocketAddress> addresses;
+    private final String loadBalanceType;
+    private final ImmutableList<ProviderLoadBalanceConfig> providerLoadBalanceConfigs;
 
-    public ServiceInformation(String serviceName, LoadBalanceType loadBalanceType,boolean isManageByZookeeper, List<SocketAddress> addresses) {
+    public ServiceInformation(String serviceName, String loadBalanceType,boolean isManageByZookeeper, List<ProviderLoadBalanceConfig> providerConfigs) {
         this.serviceName = serviceName;
         this.loadBalanceType=loadBalanceType;
         this.isManageByZookeeper = isManageByZookeeper;
-        if(addresses==null){
-            addresses=new ArrayList<>();
+        if(providerConfigs==null){
+            providerConfigs=new ArrayList<>();
         }
-        this.addresses = ImmutableList.copyOf(addresses);
+        this.providerLoadBalanceConfigs = ImmutableList.copyOf(providerConfigs);
 
     }
 
@@ -69,10 +69,18 @@ public class ServiceInformation {
     }
 
     public ImmutableList<SocketAddress> getAddresses() {
-        return addresses;
+        List<SocketAddress> result=new ArrayList<>();
+        for (ProviderLoadBalanceConfig config : providerLoadBalanceConfigs) {
+            result.add(config.getAddress());
+        }
+        return ImmutableList.copyOf(result);
     }
 
-    public LoadBalanceType getLoadBalanceType() {
+    public String getLoadBalanceType() {
         return loadBalanceType;
+    }
+
+    public ImmutableList<ProviderLoadBalanceConfig> getProviderLoadBalanceConfigs() {
+        return providerLoadBalanceConfigs;
     }
 }

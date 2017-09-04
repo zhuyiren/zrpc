@@ -17,11 +17,13 @@
 package com.zhuyiren.rpc.handler;
 
 import com.zhuyiren.rpc.common.CallHandlerManager;
+import com.zhuyiren.rpc.common.ProviderLoadBalanceConfig;
 import com.zhuyiren.rpc.common.ServiceManager;
 
 import java.net.SocketAddress;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * @author zhuyiren
@@ -29,9 +31,13 @@ import java.util.Random;
  */
 public class RandomLoadBalanceStrategy implements LoadBalanceStrategy {
 
+    public static final String LOAD_BALANCE_TYPE="random";
+
     private final ServiceManager serviceManager;
     private final CallHandlerManager callHandlerManager;
     private final Random random;
+    private volatile List<SocketAddress> addresses;
+
 
     public RandomLoadBalanceStrategy(ServiceManager serviceManager, CallHandlerManager callHandlerManager){
         this.serviceManager = serviceManager;
@@ -39,15 +45,27 @@ public class RandomLoadBalanceStrategy implements LoadBalanceStrategy {
         random=new Random(System.currentTimeMillis());
     }
 
+
+    public String getType() {
+        return LOAD_BALANCE_TYPE;
+    }
+
     @Override
-    public CallHandler doSelect(String serviceName) {
-        List<SocketAddress> providerAddress = serviceManager.getServiceProviderAddress(serviceName);
-        int length = providerAddress.size();
+    public CallHandler doSelect() {
+
+        int length = addresses.size();
         if(length==0){
             return null;
         }
-        SocketAddress targetAddress = providerAddress.get(random.nextInt(length));
+        SocketAddress targetAddress = addresses.get(random.nextInt(length));
         CallHandler result = callHandlerManager.getCallHandler(targetAddress);
         return result;
+    }
+
+
+    @Override
+    public void init(String serviceName) {
+        List<SocketAddress> temp = serviceManager.getServiceProviderAddress(serviceName);
+        addresses=new CopyOnWriteArrayList<>(temp);
     }
 }

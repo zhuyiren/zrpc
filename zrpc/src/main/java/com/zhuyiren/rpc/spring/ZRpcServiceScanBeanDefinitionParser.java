@@ -16,6 +16,7 @@
 
 package com.zhuyiren.rpc.spring;
 
+import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -31,6 +32,10 @@ import org.springframework.core.type.filter.TypeFilter;
 import org.springframework.util.StringUtils;
 import org.w3c.dom.Element;
 
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -42,6 +47,7 @@ public class ZRpcServiceScanBeanDefinitionParser implements BeanDefinitionParser
 
 
     private static final String ATTRIBUTE_BASE_PACKAGE = "base-package";
+    private static final String ATTRIBUTE_PROVIDERS="providers";
     private static final BeanNameGenerator NAME_GENERATOR = new AnnotationBeanNameGenerator();
 
 
@@ -109,18 +115,24 @@ public class ZRpcServiceScanBeanDefinitionParser implements BeanDefinitionParser
         Object engine = attributes.get("engine");
         rootBeanDefinition.getPropertyValues().addPropertyValue("engine", engine);
 
-        Object host = attributes.get("host");
-        rootBeanDefinition.getPropertyValues().addPropertyValue("host", host);
-
-        Object port = attributes.get("port");
-        rootBeanDefinition.getPropertyValues().addPropertyValue("port", port);
-
 
         String serviceName = ((String) attributes.get("serviceName"));
         if (Strings.isNullOrEmpty(serviceName)) {
             serviceName = attrIfcCls.getCanonicalName();
         }
         rootBeanDefinition.getPropertyValues().addPropertyValue("serviceName", serviceName);
+
+        String attrProviders = (String) attributes.get(ATTRIBUTE_PROVIDERS);
+        List<String> attrList = Splitter.on(",").omitEmptyStrings().trimResults().splitToList(attrProviders);
+
+        Splitter splitter = Splitter.on(":").omitEmptyStrings().trimResults();
+        List<SocketAddress> addresses=new ArrayList<>();
+        for (String attrProvider : attrList) {
+            List<String> list = splitter.splitToList(attrProvider);
+            addresses.add(new InetSocketAddress(list.get(0), Integer.parseInt(list.get(1))));
+        }
+        rootBeanDefinition.getPropertyValues().addPropertyValue("addresses",addresses);
+
         return rootBeanDefinition;
     }
 }

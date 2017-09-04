@@ -1,6 +1,7 @@
 package com.zhuyiren.rpc.spring;
 
 import com.zhuyiren.rpc.common.ZRpcPropertiesConstant;
+import com.zhuyiren.rpc.handler.RandomLoadBalanceStrategy;
 import org.springframework.stereotype.Service;
 
 import java.lang.annotation.ElementType;
@@ -27,5 +28,7 @@ public @interface ZRpcProvider {
     int port() default ZRpcPropertiesConstant.DEFAULT_PORT;
 
     String server() default "";
+
+    String loadBalanceType() default RandomLoadBalanceStrategy.LOAD_BALANCE_TYPE;
 
 }

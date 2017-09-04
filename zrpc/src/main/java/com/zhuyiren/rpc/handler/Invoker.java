@@ -27,4 +27,8 @@ import java.lang.reflect.InvocationHandler;
 public interface Invoker extends InvocationHandler {
 
 
+    void setLoadBalanceStrategy(LoadBalanceStrategy strategy);
+
+    LoadBalanceStrategy getLoadBalanceStrategy();
+
 }

@@ -30,45 +30,46 @@ import org.springframework.util.ClassUtils;
  * @author zhuyiren
  * @date 2017/8/10
  */
-public class  ZRpcProviderFactoryBean implements SmartFactoryBean,ApplicationContextAware {
+public class ZRpcProviderFactoryBean implements SmartFactoryBean, ApplicationContextAware {
 
-    private static final Logger LOGGER= LoggerFactory.getLogger(ZRpcProviderFactoryBean.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ZRpcProviderFactoryBean.class);
 
     private String serviceName;
     private String host;
     private int port;
     private Object handler;
     private Server server;
+    private String loadBalanceType;
     private ApplicationContext context;
 
 
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        this.context=applicationContext;
+        this.context = applicationContext;
     }
 
     @Override
     public Object getObject() throws Exception {
-        if(server==null){
-            server=context.getBean(Server.class);
-            if(server==null){
+        if (server == null) {
+            server = context.getBean(Server.class);
+            if (server == null) {
                 throw new IllegalStateException("The server is not set and don't find from the application");
-            }else {
+            } else {
                 LOGGER.warn("The server is not set,find the default server for using from application");
             }
         }
-        if(handler==null){
+        if (handler == null) {
             throw new IllegalStateException("The handler is not set");
         }
-        if(Strings.isNullOrEmpty(serviceName)){
+        if (Strings.isNullOrEmpty(serviceName)) {
             Class<?>[] allInterfaces = ClassUtils.getAllInterfaces(handler);
-            if(allInterfaces.length==1){
-                serviceName=allInterfaces[0].getCanonicalName();
-            }else {
+            if (allInterfaces.length == 1) {
+                serviceName = allInterfaces[0].getCanonicalName();
+            } else {
                 throw new IllegalStateException("Can't determine the service name");
             }
         }
-        server.register(serviceName,handler,host,port);
+        server.register(serviceName, handler, loadBalanceType, host, port);
         return handler;
     }
 
@@ -130,5 +131,13 @@ public class  ZRpcProviderFactoryBean implements SmartFactoryBean,ApplicationCon
 
     public void setServer(Server server) {
         this.server = server;
+    }
+
+    public String getLoadBalanceType() {
+        return loadBalanceType;
+    }
+
+    public void setLoadBalanceType(String loadBalanceType) {
+        this.loadBalanceType = loadBalanceType;
     }
 }

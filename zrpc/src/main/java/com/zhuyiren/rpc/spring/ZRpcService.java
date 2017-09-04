@@ -7,6 +7,9 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.net.SocketAddress;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author zhuyiren
@@ -26,9 +29,7 @@ public @interface ZRpcService {
 
     Class<? extends Engine> engine() default com.zhuyiren.rpc.engine.ProtostuffEngine.class;
 
-    String host() default "";
-
-    int port() default ZRpcPropertiesConstant.DEFAULT_PORT;
+    String providers() default "";
 
     String serviceName() default "";
 }
