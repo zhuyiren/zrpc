@@ -40,6 +40,7 @@ public class ZRpcProviderFactoryBean implements SmartFactoryBean, ApplicationCon
     private Object handler;
     private Server server;
     private String loadBalanceType;
+    private String loadBalanceInfo;
     private ApplicationContext context;
 
 
@@ -69,7 +70,7 @@ public class ZRpcProviderFactoryBean implements SmartFactoryBean, ApplicationCon
                 throw new IllegalStateException("Can't determine the service name");
             }
         }
-        server.register(serviceName, handler, loadBalanceType, host, port);
+        server.register(serviceName, handler, loadBalanceType, host, port,loadBalanceInfo);
         return handler;
     }
 
@@ -139,5 +140,13 @@ public class ZRpcProviderFactoryBean implements SmartFactoryBean, ApplicationCon
 
     public void setLoadBalanceType(String loadBalanceType) {
         this.loadBalanceType = loadBalanceType;
+    }
+
+    public String getLoadBalanceInfo() {
+        return loadBalanceInfo;
+    }
+
+    public void setLoadBalanceInfo(String loadBalanceInfo) {
+        this.loadBalanceInfo = loadBalanceInfo;
     }
 }

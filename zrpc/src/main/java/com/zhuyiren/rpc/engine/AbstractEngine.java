@@ -36,4 +36,10 @@ public abstract class AbstractEngine implements Engine {
 
         return getType().equals(other.getType());
     }
+
+
+    @Override
+    public int hashCode(){
+        return getType().hashCode();
+    }
 }

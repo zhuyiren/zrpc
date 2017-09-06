@@ -47,6 +47,7 @@
 
     <xsd:group name="clientElements">
         <xsd:sequence>
+            <xsd:element name="loadBalanceStrategies" type="beans:listOrSetType" minOccurs="0" maxOccurs="1"/>
             <xsd:element ref="beans:description" minOccurs="0"/>
         </xsd:sequence>
     </xsd:group>

@@ -27,7 +27,7 @@ import java.util.Map;
  */
 public interface ServiceManager {
 
-    Map<SocketAddress,ProviderLoadBalanceConfig> extractProviderAddress(String serviceName) throws Exception;
+    List<ProviderLoadBalanceConfig> extractProviderAddress(String serviceName) throws Exception;
 
     boolean watchService(String serviceName);
 

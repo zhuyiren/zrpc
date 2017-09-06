@@ -17,6 +17,7 @@
 package com.zhuyiren.rpc.spring;
 
 import com.zhuyiren.rpc.common.Client;
+import com.zhuyiren.rpc.common.ProviderLoadBalanceConfig;
 import com.zhuyiren.rpc.engine.Engine;
 import com.zhuyiren.rpc.utils.CommonUtils;
 import org.springframework.beans.BeansException;
@@ -26,6 +27,7 @@ import org.springframework.context.ApplicationContextAware;
 
 import java.net.SocketAddress;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Created by zhuyiren on 2017/8/2.
@@ -36,8 +38,9 @@ public class ZRpcServiceFactoryBean implements SmartFactoryBean, ApplicationCont
     private Class<?> ifcCls;
     private Client client;
     private Class<? extends Engine> engine;
-    private List<SocketAddress> addresses;
+    private List<ProviderLoadBalanceConfig> providers;
     private String serviceName;
+    private String loadBalanceString;
 
     private ApplicationContext context;
 
@@ -50,15 +53,15 @@ public class ZRpcServiceFactoryBean implements SmartFactoryBean, ApplicationCont
     @Override
     public Object getObject() throws Exception {
 
-        if (addresses != null && addresses.size() > 0) {
-            CommonUtils.checkNoAnyHost(addresses);
+        if (providers != null && providers.size() > 0) {
+            CommonUtils.checkNoAnyHost(providers.stream().map(item->item.getAddress()).collect(Collectors.toList()));
         }
 
 
         if (client == null) {
             this.client = context.getBean(Client.class);
         }
-        return client.exportService(engine, ifcCls, serviceName, addresses);
+        return client.exportService(engine, ifcCls, serviceName, providers,loadBalanceString);
     }
 
     @Override
@@ -109,12 +112,12 @@ public class ZRpcServiceFactoryBean implements SmartFactoryBean, ApplicationCont
     }
 
 
-    public List<SocketAddress> getAddresses() {
-        return addresses;
+    public List<ProviderLoadBalanceConfig> getProviders() {
+        return providers;
     }
 
-    public void setAddresses(List<SocketAddress> addresses) {
-        this.addresses = addresses;
+    public void setProviders(List<ProviderLoadBalanceConfig> providers) {
+        this.providers = providers;
     }
 
     public String getServiceName() {
@@ -123,5 +126,14 @@ public class ZRpcServiceFactoryBean implements SmartFactoryBean, ApplicationCont
 
     public void setServiceName(String serviceName) {
         this.serviceName = serviceName;
+    }
+
+
+    public String getLoadBalanceString() {
+        return loadBalanceString;
+    }
+
+    public void setLoadBalanceString(String loadBalanceString) {
+        this.loadBalanceString = loadBalanceString;
     }
 }

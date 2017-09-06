@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package com.zhuyiren.rpc.handler;
+package com.zhuyiren.rpc.loadbalance;
 
 import com.google.common.collect.Range;
 import com.zhuyiren.rpc.common.CallHandlerManager;
 import com.zhuyiren.rpc.common.ProviderLoadBalanceConfig;
 import com.zhuyiren.rpc.common.ServiceManager;
+import com.zhuyiren.rpc.handler.CallHandler;
 
 import java.net.SocketAddress;
 import java.util.List;
@@ -38,7 +39,7 @@ public class WeightedRoundRobinLoadBalanceStrategy implements LoadBalanceStrateg
     private volatile List<ProviderWeightHolder> holders;
     private volatile int total;
 
-    private class ProviderWeightHolder{
+    private static class ProviderWeightHolder{
         SocketAddress address;
         Range<Integer> range;
 
@@ -56,7 +57,10 @@ public class WeightedRoundRobinLoadBalanceStrategy implements LoadBalanceStrateg
 
     @Override
     public CallHandler doSelect() {
-        int slot=(int)(currentIndex%total);
+        if(total==0){
+            return null;
+        }
+        int slot=(int)(currentIndex++%total);
         for (ProviderWeightHolder holder : holders) {
             if(holder.range.contains(slot)){
                 return callHandlerManager.getCallHandler(holder.address);

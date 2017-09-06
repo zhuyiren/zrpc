@@ -59,7 +59,7 @@ public class ZRpcProviderPostProcessor implements BeanFactoryPostProcessor {
                 try {
                     registerProviderFactoryBeanDefinition(new BeanDefinitionHolder(beanDefinition, beanName), ((BeanDefinitionRegistry) beanFactory));
                 } catch (ClassNotFoundException e) {
-                    LOGGER.error(e.getMessage(), e);
+                    LOGGER.error("Register provider class occur error", e);
                 }
             }
         }

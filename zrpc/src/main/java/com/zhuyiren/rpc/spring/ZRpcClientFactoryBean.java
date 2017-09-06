@@ -21,9 +21,14 @@ import com.zhuyiren.rpc.common.DefaultClient;
 import com.zhuyiren.rpc.engine.Engine;
 import com.zhuyiren.rpc.engine.NormalEngine;
 import com.zhuyiren.rpc.engine.ProtostuffEngine;
+import com.zhuyiren.rpc.loadbalance.LoadBalanceStrategy;
+import com.zhuyiren.rpc.loadbalance.RandomLoadBalanceStrategy;
+import com.zhuyiren.rpc.loadbalance.RoundRobinLoadBalanceStrategy;
+import com.zhuyiren.rpc.loadbalance.WeightedRoundRobinLoadBalanceStrategy;
 import org.springframework.beans.factory.SmartFactoryBean;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -38,6 +43,7 @@ public class ZRpcClientFactoryBean implements SmartFactoryBean<Client> {
     private Client client;
     private String zkConnectUrl;
     private String zkNamespace;
+    List<Class<?>> loadBalanceStrategies;
 
     @Override
     public Client getObject() throws Exception {
@@ -49,6 +55,14 @@ public class ZRpcClientFactoryBean implements SmartFactoryBean<Client> {
         }
         for (Engine engine : engines) {
             client.addEngine(engine);
+        }
+
+        if(loadBalanceStrategies==null || loadBalanceStrategies.isEmpty()){
+            loadBalanceStrategies=defaultLoadBalanceStrategies();
+        }
+
+        for (Class<?> strategy : loadBalanceStrategies) {
+            client.registerLoadBalance((Class<? extends LoadBalanceStrategy>)strategy);
         }
         return client;
     }
@@ -122,10 +136,23 @@ public class ZRpcClientFactoryBean implements SmartFactoryBean<Client> {
         this.zkNamespace = zkNamespace;
     }
 
+
+    public List<Class<?>> getLoadBalanceStrategies() {
+        return loadBalanceStrategies;
+    }
+
+    public void setLoadBalanceStrategies(List<Class<?>> loadBalanceStrategies) {
+        this.loadBalanceStrategies = loadBalanceStrategies;
+    }
+
     private Engine[] defaultEngines() {
         List<Engine> engines = new ArrayList<>();
         engines.add(new NormalEngine());
         engines.add(new ProtostuffEngine());
         return engines.toArray(new Engine[0]);
+    }
+
+    private List<Class<?>> defaultLoadBalanceStrategies(){
+        return Arrays.asList(RandomLoadBalanceStrategy.class, RoundRobinLoadBalanceStrategy.class, WeightedRoundRobinLoadBalanceStrategy.class);
     }
 }

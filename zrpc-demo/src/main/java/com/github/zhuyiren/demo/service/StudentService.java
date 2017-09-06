@@ -25,7 +25,7 @@ import com.zhuyiren.rpc.spring.ZRpcService;
  * @author zhuyiren
  * @date 2017/9/2
  */
-@ZRpcService(value = "hostUserService",host = "192.168.78.1",port = 3324,serviceName = "com.github.zhuyiren.demo.service.StudentService",client ="demoClient",engine = ProtostuffEngine.class,ifcCls = StudentService.class)
+@ZRpcService(value = "hostUserService",serviceName = "com.github.zhuyiren.demo.service.StudentService",client ="demoClient",engine = ProtostuffEngine.class,ifcCls = StudentService.class)
 public interface StudentService {
 
 

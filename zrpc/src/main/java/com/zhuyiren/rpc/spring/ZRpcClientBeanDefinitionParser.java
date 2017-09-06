@@ -18,6 +18,7 @@ package com.zhuyiren.rpc.spring;
 
 import com.google.common.base.Strings;
 import com.zhuyiren.rpc.engine.Engine;
+import com.zhuyiren.rpc.utils.CommonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.BeanDefinitionStoreException;
@@ -46,13 +47,12 @@ public class ZRpcClientBeanDefinitionParser extends AbstractSingleBeanDefinition
     private static final String ATTRIBUTE_ZK_CONNECT_URL="zkConnectUrl";
     private static final String ENGINES_ELEMENT="engines";
     private static final String ATTRIBUTE_ZK_NAMESPACE="zkNamespace";
+    private static final String ELEMENT_LOAD_BALANCE_TYPE="loadBalanceStrategies";
 
     private static final String CLIENT_NAME_DEFAULT = "client";
 
     @Override
     protected void doParse(Element element, ParserContext parserContext, BeanDefinitionBuilder builder) {
-        BeanDefinitionParserDelegate delegate=new BeanDefinitionParserDelegate(parserContext.getReaderContext());
-
         String workerCountAttr = element.getAttribute(ATTRIBUTE_WORKER_THREAD_COUNT);
         int workCount=0;
         if(!Strings.isNullOrEmpty(workerCountAttr)){
@@ -73,53 +73,15 @@ public class ZRpcClientBeanDefinitionParser extends AbstractSingleBeanDefinition
         builder.addPropertyValue("useZip",useZip);
 
         String zkConnectUrlAttr = element.getAttribute(ATTRIBUTE_ZK_CONNECT_URL);
-        /*if(Strings.isNullOrEmpty(zkConnectUrlAttr)){
-            parserContext.getReaderContext().error("The Zookeeper must be configurated",element);
-        }*/
+
         builder.addPropertyValue("zkConnectUrl",zkConnectUrlAttr);
 
         String zkNamespaceAttr=element.getAttribute(ATTRIBUTE_ZK_NAMESPACE);
         builder.addPropertyValue("zkNamespace",zkNamespaceAttr);
 
-        List<Element> enginesElements = DomUtils.getChildElementsByTagName(element, ENGINES_ELEMENT);
-        if(enginesElements.size()>1){
-            parserContext.getReaderContext().error("must only have one engines element",element);
-        }
-        if(enginesElements.size()<=0){
-            return;
-        }
-        Element enginesElement = enginesElements.get(0);
-        List<Element> listElements = DomUtils.getChildElementsByTagName(enginesElement, "list");
-        if(listElements.size()>1){
-            parserContext.getReaderContext().error("must have one list element",element);
-        }
-        Element listElement = listElements.get(0);
-        RootBeanDefinition rootBeanDefinition = new RootBeanDefinition();
-        List<Object> objects = delegate.parseListElement(listElement, rootBeanDefinition);
-        List<Engine> engines=new ArrayList<>();
-        for (Object object : objects) {
-            if(object instanceof TypedStringValue && !Strings.isNullOrEmpty(((TypedStringValue) object).getValue())){
-                try {
-                    Class<? extends Engine> engineCls = (Class<? extends Engine>) Class.forName(((TypedStringValue) object).getValue());
-                    Engine engine = engineCls.newInstance();
-                    if(engines.contains(engine)){
-                       if(LOGGER.isDebugEnabled()){
-                           LOGGER.debug(engineCls +" have registered the Client once");
-                           continue;
-                       }
-                    }
-                    engines.add(engine);
-                } catch (ClassNotFoundException e) {
-                    parserContext.getReaderContext().error(((TypedStringValue) object).getValue()+
-                    " is not a implementation of Engine interface",listElement);
-                }catch (Exception e){
-                    parserContext.getReaderContext().error(e.getMessage(),listElement);
-                }
-            }
-        }
-        builder.addPropertyValue("engines",engines);
+        List<Class<?>> loadBalanceClasses = CommonUtils.extractClassList(element, parserContext.getReaderContext(), ELEMENT_LOAD_BALANCE_TYPE);
 
-
+        builder.addPropertyValue(ELEMENT_LOAD_BALANCE_TYPE,loadBalanceClasses);
 
 
     }

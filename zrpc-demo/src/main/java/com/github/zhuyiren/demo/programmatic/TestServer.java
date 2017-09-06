@@ -33,7 +33,7 @@ public class TestServer {
 
     public static void main(String[] args){
         Server server = DefaultServer.newBuilder()
-                .port(3333)
+                .port(3324)
                 .addEngine(new JsonEngine())
                 .addEngine(new ProtostuffEngine())
                 .ioThreadSize(8)

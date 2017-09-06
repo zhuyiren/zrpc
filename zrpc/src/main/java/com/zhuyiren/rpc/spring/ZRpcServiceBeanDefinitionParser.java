@@ -94,7 +94,7 @@ public class ZRpcServiceBeanDefinitionParser extends AbstractSingleBeanDefinitio
         for (int index = 0; index < childNodes.getLength(); index++) {
             Node item = childNodes.item(index);
             if (item instanceof Element &&
-                    item.getLocalName().equals("clientRef") &&
+                    "clientRef".equals(item.getLocalName()) &&
                     ((Element) item).hasAttribute(ATTRIBUTE_REF)) {
                 clientRef = parseRef(parserContext, ((Element) item));
                 break;

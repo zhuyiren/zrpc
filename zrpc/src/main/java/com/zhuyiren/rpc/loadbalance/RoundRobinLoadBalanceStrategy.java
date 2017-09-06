@@ -14,58 +14,52 @@
  * limitations under the License.
  */
 
-package com.zhuyiren.rpc.handler;
+package com.zhuyiren.rpc.loadbalance;
 
 import com.zhuyiren.rpc.common.CallHandlerManager;
-import com.zhuyiren.rpc.common.ProviderLoadBalanceConfig;
 import com.zhuyiren.rpc.common.ServiceManager;
+import com.zhuyiren.rpc.handler.CallHandler;
 
 import java.net.SocketAddress;
 import java.util.List;
-import java.util.Random;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * @author zhuyiren
- * @date 2017/9/2
+ * @date 2017/9/3
  */
-public class RandomLoadBalanceStrategy implements LoadBalanceStrategy {
+public class RoundRobinLoadBalanceStrategy implements LoadBalanceStrategy {
 
-    public static final String LOAD_BALANCE_TYPE="random";
+    public static final String LOAD_BALANCE_TYPE="roundRobin";
 
     private final ServiceManager serviceManager;
     private final CallHandlerManager callHandlerManager;
-    private final Random random;
     private volatile List<SocketAddress> addresses;
+    private volatile long currentIndex;
 
-
-    public RandomLoadBalanceStrategy(ServiceManager serviceManager, CallHandlerManager callHandlerManager){
-        this.serviceManager = serviceManager;
+    public RoundRobinLoadBalanceStrategy(ServiceManager serviceManager,CallHandlerManager callHandlerManager){
+        this.serviceManager=serviceManager;
         this.callHandlerManager=callHandlerManager;
-        random=new Random(System.currentTimeMillis());
+        currentIndex=0;
     }
 
+    @Override
+    public void init(String serviceName) {
+        List<SocketAddress> temp = serviceManager.getServiceProviderAddress(serviceName);
+        addresses=new CopyOnWriteArrayList<>(temp);
+    }
 
+    @Override
     public String getType() {
         return LOAD_BALANCE_TYPE;
     }
 
     @Override
     public CallHandler doSelect() {
-
         int length = addresses.size();
         if(length==0){
             return null;
         }
-        SocketAddress targetAddress = addresses.get(random.nextInt(length));
-        CallHandler result = callHandlerManager.getCallHandler(targetAddress);
-        return result;
-    }
-
-
-    @Override
-    public void init(String serviceName) {
-        List<SocketAddress> temp = serviceManager.getServiceProviderAddress(serviceName);
-        addresses=new CopyOnWriteArrayList<>(temp);
+        return callHandlerManager.getCallHandler(addresses.get((int) (currentIndex++ % length)));
     }
 }

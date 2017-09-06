@@ -192,7 +192,7 @@ public class DefaultCallHandler implements CallHandler {
     @Override
     public boolean setServiceState(String serviceName, boolean state) {
         serviceState.put(serviceName, state);
-        Boolean removed = true;
+        boolean removed = true;
         for (Map.Entry<String, Boolean> entry : serviceState.entrySet()) {
             if (entry.getValue()) {
                 removed = false;

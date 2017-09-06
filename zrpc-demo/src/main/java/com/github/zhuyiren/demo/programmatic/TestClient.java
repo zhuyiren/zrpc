@@ -22,7 +22,12 @@ import com.github.zhuyiren.demo.service.impl.StudentServiceImpl;
 import com.zhuyiren.rpc.common.DefaultClient;
 import com.zhuyiren.rpc.engine.ProtostuffEngine;
 import com.zhuyiren.rpc.handler.ProtostuffRequestHandlerAdapter;
+import com.zhuyiren.rpc.loadbalance.RandomLoadBalanceStrategy;
+import com.zhuyiren.rpc.loadbalance.RoundRobinLoadBalanceStrategy;
+import com.zhuyiren.rpc.loadbalance.WeightedRoundRobinLoadBalanceStrategy;
 import io.protostuff.ProtostuffIOUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author zhuyiren
@@ -30,11 +35,21 @@ import io.protostuff.ProtostuffIOUtil;
  */
 public class TestClient {
 
+    private static final Logger LOGGER= LoggerFactory.getLogger(TestClient.class);
 
     public static void main(String[] args)throws Exception {
         DefaultClient client = new DefaultClient("192.168.78.30:2181", "zrpc-demo", 4, false);
-        StudentService studentService = client.exportService(ProtostuffEngine.class, StudentService.class, null);
-        TeacherInfo teacher = studentService.getTeacher(3);
-        System.out.println(teacher);
+        client.registerLoadBalance(WeightedRoundRobinLoadBalanceStrategy.class);
+        client.registerLoadBalance(RandomLoadBalanceStrategy.class);
+        client.registerLoadBalance(RoundRobinLoadBalanceStrategy.class);
+        StudentService studentService = client.exportService(ProtostuffEngine.class, StudentService.class, null,null);
+        while (true){
+            try {
+                TeacherInfo teacher = studentService.getTeacher(3);
+            } catch (Exception e) {
+                LOGGER.error(e.getMessage(),e);
+                Thread.sleep(1000);
+            }
+        }
     }
 }

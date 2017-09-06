@@ -18,6 +18,7 @@ package com.zhuyiren.rpc.spring;
 
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
+import com.zhuyiren.rpc.common.ProviderLoadBalanceConfig;
 import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
@@ -126,12 +127,14 @@ public class ZRpcServiceScanBeanDefinitionParser implements BeanDefinitionParser
         List<String> attrList = Splitter.on(",").omitEmptyStrings().trimResults().splitToList(attrProviders);
 
         Splitter splitter = Splitter.on(":").omitEmptyStrings().trimResults();
-        List<SocketAddress> addresses=new ArrayList<>();
+        List<ProviderLoadBalanceConfig> providers=new ArrayList<>();
         for (String attrProvider : attrList) {
             List<String> list = splitter.splitToList(attrProvider);
-            addresses.add(new InetSocketAddress(list.get(0), Integer.parseInt(list.get(1))));
+            InetSocketAddress address = new InetSocketAddress(list.get(0), Integer.parseInt(list.get(1)));
+            ProviderLoadBalanceConfig provider = new ProviderLoadBalanceConfig(address, Integer.parseInt(list.get(2)));
+            providers.add(provider);
         }
-        rootBeanDefinition.getPropertyValues().addPropertyValue("addresses",addresses);
+        rootBeanDefinition.getPropertyValues().addPropertyValue("providers",providers);
 
         return rootBeanDefinition;
     }

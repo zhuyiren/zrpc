@@ -20,12 +20,15 @@ import com.google.protobuf.BlockingService;
 import com.google.protobuf.Descriptors;
 import com.google.protobuf.Message;
 import com.zhuyiren.rpc.common.Packet;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Created by zhuyiren on 2017/5/21.
  */
 public class ProtobufHandlerAdapter implements RequestHandlerAdapter {
 
+    private static final Logger LOGGER= LoggerFactory.getLogger(ProtobufHandlerAdapter.class);
 
     @Override
     public Packet handle(Packet request, Object handler) {
@@ -38,7 +41,7 @@ public class ProtobufHandlerAdapter implements RequestHandlerAdapter {
             response.setEntity(resultBody.toByteArray());
             return response;
         } catch (Exception e) {
-            e.printStackTrace();
+            LOGGER.error("handle the request ["+request+"] occur error",e);
         }
         return null;
     }

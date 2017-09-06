@@ -20,7 +20,7 @@ package com.zhuyiren.rpc.common;
 import com.google.common.base.Strings;
 import com.zhuyiren.rpc.engine.Engine;
 import com.zhuyiren.rpc.engine.ProtostuffEngine;
-import com.zhuyiren.rpc.handler.RandomLoadBalanceStrategy;
+import com.zhuyiren.rpc.loadbalance.RandomLoadBalanceStrategy;
 import com.zhuyiren.rpc.handler.ServerHandlerInitializer;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelOption;
@@ -38,6 +38,7 @@ import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -78,7 +79,7 @@ public class DefaultServer implements Server {
         LOGGER.debug("Io thread size:" + ioThreadSize + ",businessExecutors thread size:" + ioThreadSize);
         nioExecutors = new NioEventLoopGroup(ioThreadSize);
         businessExecutors = new DefaultEventExecutorGroup(ioThreadSize);
-        if (engines == null || engines.size() == 0) {
+        if (engines == null || engines.isEmpty()) {
             initEngines();
         }
         initializerHandler = new ServerHandlerInitializer(this, engines, useZip);
@@ -107,7 +108,7 @@ public class DefaultServer implements Server {
     }
 
     @Override
-    public boolean register(String serviceName, Object handler, String type, String host, int port) {
+    public boolean register(String serviceName, Object handler, String type, String host, int port,String loadBalanceInfo) {
         if (Strings.isNullOrEmpty(host)) {
             host = this.host;
         }
@@ -133,9 +134,12 @@ public class DefaultServer implements Server {
         }
 
         try {
-            registerZookeeper(provider.getAddress(), serviceName, type);
+            if(!(provider.getAddress() instanceof InetSocketAddress)){
+                throw new IllegalArgumentException("The address ["+provider.getAddress()+"] is not valid address");
+            }
+            registerZookeeper(((InetSocketAddress) provider.getAddress()), serviceName, type,loadBalanceInfo);
         } catch (Exception e) {
-            LOGGER.error(e.getMessage(), e);
+            LOGGER.error("Write provider information to zookeeper occur error", e);
             return false;
         }
         return provider.addService(serviceName, handler);
@@ -149,7 +153,7 @@ public class DefaultServer implements Server {
 
     @Override
     public boolean register(String serviceName, Object handler, String type) {
-        return register(serviceName, handler, type, host, port);
+        return register(serviceName, handler, type, host, port,null);
     }
 
     @Override
@@ -195,26 +199,22 @@ public class DefaultServer implements Server {
     }
 
 
-    private void registerZookeeper(SocketAddress address, String serviceName, String type) throws Exception {
+    private void registerZookeeper(InetSocketAddress address, String serviceName, String type,String loadBalanceInfo) throws Exception {
 
         if (zkClient == null || zkClient.getState() != CuratorFrameworkState.STARTED) {
             LOGGER.warn("The server is not registering service information to zookeeper,because it not connecting the zookeeper");
             return;
         }
 
-
-        if (!(address instanceof InetSocketAddress)) {
-            throw new IllegalArgumentException("address must be InetSocketAddress");
-        }
         String path = "/" + serviceName.replaceAll("\\.", "/");
-
-
-        InetSocketAddress realAddress = (InetSocketAddress) address;
-        String hostString = realAddress.getHostString();
-        int port = realAddress.getPort();
+        String hostString = address.getHostString();
+        int port = address.getPort();
         StringBuilder sb = new StringBuilder();
-        sb.append(hostString).append(":").append(port);
-        sb.append(":").append("0");
+        sb.append(hostString).append(':').append(port);
+        if(Strings.isNullOrEmpty(loadBalanceInfo)){
+            loadBalanceInfo="1";
+        }
+        sb.append(':').append(loadBalanceInfo);
 
         if (writeZookeeperConfig(path, sb.toString(), type)) {
             LOGGER.debug("register service:[" + serviceName + "] to zookeeper");
@@ -243,31 +243,38 @@ public class DefaultServer implements Server {
                 zkClient.delete().forPath(path);
             }
             zkClient.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT)
-                    .forPath(path, type.getBytes());
+                    .forPath(path, type.getBytes(StandardCharsets.UTF_8));
             zkClient.create().creatingParentsIfNeeded().withMode(CreateMode.EPHEMERAL_SEQUENTIAL)
-                    .forPath(nodePath, insertData.getBytes());
+                    .forPath(nodePath, insertData.getBytes(StandardCharsets.UTF_8));
             return true;
         } else {
-            String originalType = new String(zkClient.getData().forPath(path));
-            if (originalType != type) {
+            String originalType = new String(zkClient.getData().forPath(path),StandardCharsets.UTF_8);
+            if (!originalType.equals(type)) {
                 LOGGER.warn("The register load balance type [" + type + "] is not equal original type [" + originalType + "]");
             }
 
             List<String> childNames = zkClient.getChildren().forPath(path);
+            InetSocketAddress insertAddress = parseConfig(insertData);
             for (String childName : childNames) {
                 byte[] bytes = zkClient.getData().forPath(path + "/" + childName);
-                String childData = new String(bytes);
-                String originalAddress = childData.substring(0, childData.lastIndexOf(":"));
-                String newAddress = insertData.substring(0, insertData.lastIndexOf(":"));
-                if (originalAddress.equals(newAddress)) {
+                String childData = new String(bytes,StandardCharsets.UTF_8);
+                if(insertAddress.equals(parseConfig(childData))){
                     zkClient.delete().forPath(path + "/" + childName);
                 }
             }
 
             zkClient.create().creatingParentsIfNeeded().withMode(CreateMode.EPHEMERAL_SEQUENTIAL)
-                    .forPath(nodePath, insertData.getBytes());
+                    .forPath(nodePath, insertData.getBytes(StandardCharsets.UTF_8));
             return true;
         }
+    }
+
+    private InetSocketAddress parseConfig(String config){
+        int addressEnd = config.indexOf(':');
+        String address = config.substring(0, addressEnd);
+        int port=Integer.parseInt(config.substring(addressEnd+1,config.lastIndexOf(':')));
+        return new InetSocketAddress(address,port);
+
     }
 
 

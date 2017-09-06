@@ -16,7 +16,7 @@
 
 package com.zhuyiren.rpc.handler;
 
-import com.zhuyiren.rpc.engine.Engine;
+import com.zhuyiren.rpc.loadbalance.LoadBalanceStrategy;
 
 import java.lang.reflect.InvocationHandler;
 

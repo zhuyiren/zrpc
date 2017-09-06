@@ -16,8 +16,17 @@
 
 package com.zhuyiren.rpc.utils;
 
+import com.google.common.base.Strings;
+import org.springframework.beans.factory.config.TypedStringValue;
+import org.springframework.beans.factory.support.RootBeanDefinition;
+import org.springframework.beans.factory.xml.BeanDefinitionParserDelegate;
+import org.springframework.beans.factory.xml.XmlReaderContext;
+import org.springframework.util.xml.DomUtils;
+import org.w3c.dom.Element;
+
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.ArrayList;
 import java.util.List;
 
 import static com.zhuyiren.rpc.common.ZRpcPropertiesConstant.ANY_HOST;
@@ -29,17 +38,49 @@ import static com.zhuyiren.rpc.common.ZRpcPropertiesConstant.ANY_HOST;
 public final class CommonUtils {
 
 
-    private CommonUtils(){
+    private CommonUtils() {
 
     }
 
     public static void checkNoAnyHost(List<SocketAddress> addresses) {
         addresses.forEach(address -> {
-            if (address != null && address instanceof InetSocketAddress) {
+            if (address instanceof InetSocketAddress) {
                 if (ANY_HOST.equals(((InetSocketAddress) address).getAddress().getHostAddress())) {
                     throw new IllegalArgumentException("The address must not be 0.0.0.0");
                 }
             }
         });
+    }
+
+    public static List<Class<?>> extractClassList(Element parent, XmlReaderContext context,String propertyName) {
+        List<Class<?>> result = new ArrayList<>();
+        List<Element> propertyElements = DomUtils.getChildElementsByTagName(parent, propertyName);
+        if(propertyElements.size()>1){
+            context.error("must only have one ["+propertyName+"] element",parent);
+        }
+        if(propertyElements.isEmpty()){
+            return result;
+        }
+        List<Element> listElements = DomUtils.getChildElementsByTagName(propertyElements.get(0), "list");
+        if(listElements.size()>1){
+            context.error("must not have more than one list element",parent);
+        }
+        Element listElement = listElements.get(0);
+        BeanDefinitionParserDelegate delegate = new BeanDefinitionParserDelegate(context);
+        RootBeanDefinition rootBeanDefinition = new RootBeanDefinition();
+        List<Object> objects = delegate.parseListElement(listElement, rootBeanDefinition);
+        for (Object object : objects) {
+            if (object instanceof TypedStringValue && !Strings.isNullOrEmpty(((TypedStringValue) object).getValue())) {
+                try {
+                    Class<?> targetClass = Class.forName(((TypedStringValue) object).getValue());
+                    result.add(targetClass);
+                } catch (ClassNotFoundException e) {
+                    context.error(e.getMessage(), listElement);
+                } catch (Exception e) {
+                    context.error(e.getMessage(), listElement);
+                }
+            }
+        }
+        return result;
     }
 }

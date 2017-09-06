@@ -19,6 +19,8 @@ package com.zhuyiren.rpc.handler;
 import com.zhuyiren.rpc.common.Packet;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,6 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class DefaultRequestDispatch extends ChannelInboundHandlerAdapter implements RequestDispatcher {
 
+    private static final Logger LOGGER= LoggerFactory.getLogger(DefaultRequestDispatch.class);
 
     private RequestHandlerAdapter handlerAdapter;
     private Map<String, Object> serviceHandlers = new ConcurrentHashMap<>();
@@ -69,7 +72,7 @@ public class DefaultRequestDispatch extends ChannelInboundHandlerAdapter impleme
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        cause.printStackTrace();
+        LOGGER.error(cause.getMessage());
     }
 
 

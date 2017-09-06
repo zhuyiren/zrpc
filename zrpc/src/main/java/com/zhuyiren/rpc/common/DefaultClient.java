@@ -19,6 +19,8 @@ package com.zhuyiren.rpc.common;
 import com.google.common.base.Strings;
 import com.zhuyiren.rpc.engine.Engine;
 import com.zhuyiren.rpc.handler.*;
+import com.zhuyiren.rpc.loadbalance.LoadBalanceStrategy;
+import com.zhuyiren.rpc.loadbalance.RandomLoadBalanceStrategy;
 import com.zhuyiren.rpc.utils.CommonUtils;
 import io.netty.channel.nio.NioEventLoopGroup;
 import org.apache.curator.framework.CuratorFramework;
@@ -35,8 +37,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Proxy;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -81,12 +84,12 @@ public class DefaultClient implements Client, ServiceManager, CallHandlerManager
                     return;
                 }
                 List<SocketAddress> originalAddresses = originalServiceInfo.getAddresses();
-                Map<SocketAddress, ProviderLoadBalanceConfig> providerLoadBalanceConfigMap = extractProviderAddress(serviceName);
-                List<SocketAddress> newAddresses = new ArrayList<>(providerLoadBalanceConfigMap.keySet());
+                List<ProviderLoadBalanceConfig> providerLoadBalanceConfigs = extractProviderAddress(serviceName);
+                List<SocketAddress> newAddresses = providerLoadBalanceConfigs.stream().map(key->key.getAddress()).collect(Collectors.toList());
 
                 List<SocketAddress> removeAddresses = new ArrayList<>(originalAddresses);
                 List<SocketAddress> addAddresses = new ArrayList<>(newAddresses);
-                List<SocketAddress> intersectionAddresses=new ArrayList<>(originalAddresses);
+                List<SocketAddress> intersectionAddresses = new ArrayList<>(originalAddresses);
 
                 removeAddresses.removeAll(newAddresses);
                 addAddresses.removeAll(originalAddresses);
@@ -103,42 +106,42 @@ public class DefaultClient implements Client, ServiceManager, CallHandlerManager
 
                 List<SocketAddress> reallyAddresses = createCallWithService(serviceName, addAddresses);
                 reallyAddresses.addAll(intersectionAddresses);
-                List<ProviderLoadBalanceConfig> configs = providerLoadBalanceConfigMap.values().stream().filter(provider ->
+                List<ProviderLoadBalanceConfig> configs = providerLoadBalanceConfigs.stream().filter(provider ->
                         reallyAddresses.contains(provider.getAddress())
                 ).collect(Collectors.toList());
-                serviceInfoMaps.put(serviceName,new ServiceInformation(serviceName,originalServiceInfo.getLoadBalanceType(),true,configs));
+                serviceInfoMaps.put(serviceName, new ServiceInformation(serviceName, originalServiceInfo.getLoadBalanceType(), true, configs));
                 invokerMap.get(serviceName).getLoadBalanceStrategy().init(serviceName);
             }
         }
     };
 
-    private class LoadBalanceWatcher implements NodeCacheListener{
+    private class LoadBalanceWatcher implements NodeCacheListener {
 
         private final String serviceName;
         private final String path;
 
-        public LoadBalanceWatcher(String serviceName){
-            this.serviceName=serviceName;
+        public LoadBalanceWatcher(String serviceName) {
+            this.serviceName = serviceName;
             path = "/" + serviceName.replaceAll("\\.", "/");
         }
 
 
         @Override
         public void nodeChanged() throws Exception {
-            synchronized (DefaultClient.this){
-                if(zkClient.checkExists().forPath(path)==null){
+            synchronized (DefaultClient.this) {
+                if (zkClient.checkExists().forPath(path) == null) {
                     return;
                 }
 
-                String loadBalance=getLoadBalanceTypeFromCoordination(serviceName);
+                String loadBalance = getLoadBalanceTypeFromCoordination(serviceName);
                 LoadBalanceStrategy strategy = invokerMap.get(serviceName).getLoadBalanceStrategy();
-                if(loadBalance.equals(strategy.getType())){
+                if (loadBalance.equals(strategy.getType())) {
                     return;
                 }
 
                 LoadBalanceStrategy newStrategy = getLoadBalanceStrategy(loadBalance);
-                if(newStrategy==null){
-                    LOGGER.warn("The load balance type +["+loadBalance+"] is not valid");
+                if (newStrategy == null) {
+                    LOGGER.warn("The load balance type [" + loadBalance + "] is not valid");
                     return;
                 }
 
@@ -186,16 +189,17 @@ public class DefaultClient implements Client, ServiceManager, CallHandlerManager
 
 
     @Override
-    public synchronized <T> T exportService(Class<? extends Engine> engineType, Class<T> service, List<SocketAddress> addresses) throws Exception {
-        return exportService(engineType, service, service.getCanonicalName(), addresses);
+    public synchronized <T> T exportService(Class<? extends Engine> engineType, Class<T> service, List<ProviderLoadBalanceConfig> providers, String loadBalanceString) throws Exception {
+        return exportService(engineType, service, service.getCanonicalName(), providers, loadBalanceString);
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public synchronized <T> T exportService(Class<? extends Engine> engineType, Class<T> service, String serviceName, List<SocketAddress> addresses) throws Exception {
+    public synchronized <T> T exportService(Class<? extends Engine> engineType, Class<T> service, String serviceName, List<ProviderLoadBalanceConfig> providers, String loadBalanceString) throws Exception {
 
-        if (addresses != null && addresses.size() > 0) {
-            CommonUtils.checkNoAnyHost(addresses);
+        if (providers != null && providers.size() > 0) {
+            List<SocketAddress> collectAddresses = providers.stream().map(key -> key.getAddress()).collect(Collectors.toList());
+            CommonUtils.checkNoAnyHost(collectAddresses);
         }
 
         Engine engine = findEngineByType(engineType);
@@ -203,28 +207,36 @@ public class DefaultClient implements Client, ServiceManager, CallHandlerManager
             engine = addEngineByClass(engineType);
         }
 
-        Map<SocketAddress,ProviderLoadBalanceConfig> configs=new HashMap<>();
+
+        String loadBalanceType;
+        String zkLoadBalanceString = null;
         //采用zookeeper管理服务
         boolean isZkManage = false;
-        if (addresses == null || addresses.size() == 0) {
+        if (providers == null || providers.isEmpty()) {
             isZkManage = true;
-            configs = extractProviderAddress(serviceName);
-            addresses=new ArrayList<>(configs.keySet());
+            providers = extractProviderAddress(serviceName);
+            zkLoadBalanceString = getLoadBalanceTypeFromCoordination(serviceName);
+        }
+        if (zkLoadBalanceString == null) {
+            if (Strings.isNullOrEmpty(loadBalanceString)) {
+                loadBalanceType = RandomLoadBalanceStrategy.LOAD_BALANCE_TYPE;
+            } else {
+                loadBalanceType = loadBalanceString;
+            }
+        } else {
+            loadBalanceType = zkLoadBalanceString;
         }
 
-
-        String loadBalanceType = getLoadBalanceType(serviceName);
-        LoadBalanceStrategy strategy=getLoadBalanceStrategy(loadBalanceType);
-        if (loadBalanceType == null) {
+        LoadBalanceStrategy strategy = getLoadBalanceStrategy(loadBalanceType);
+        if (strategy == null) {
             LOGGER.warn("Can't find the load balance strategy,and will use RANDOM strategy");
             strategy = new RandomLoadBalanceStrategy(this, this);
         }
-        LOGGER.debug("The service ["+serviceName+"] using load balance strategy ["+loadBalanceType+"]");
+        LOGGER.debug("The service [" + serviceName + "] using load balance strategy [" + loadBalanceType + "]");
 
 
-
-        List<SocketAddress> connectedAddresses=createCallWithService(serviceName, addresses);
-        List<ProviderLoadBalanceConfig> providerConfigs = configs.values().stream().filter(config -> connectedAddresses.contains(config.getAddress())).collect(Collectors.toList());
+        List<SocketAddress> connectedAddresses = createCallWithService(serviceName,providers.stream().map(key->key.getAddress()).collect(Collectors.toList()) );
+        List<ProviderLoadBalanceConfig> providerConfigs=providers.stream().filter((item)->connectedAddresses.contains(item.getAddress())).collect(Collectors.toList());
         ServiceInformation serviceInfo = new ServiceInformation(serviceName, loadBalanceType, isZkManage, providerConfigs);
         serviceInfoMaps.put(serviceName, serviceInfo);
 
@@ -240,15 +252,15 @@ public class DefaultClient implements Client, ServiceManager, CallHandlerManager
     }
 
 
-    private List<SocketAddress> createCallWithService(String serviceName, List<SocketAddress> addresses){
-        List<SocketAddress> really=new ArrayList<>();
+    private List<SocketAddress> createCallWithService(String serviceName, List<SocketAddress> addresses) {
+        List<SocketAddress> really = new ArrayList<>();
         for (SocketAddress address : addresses) {
             CallHandler callHandler = callerMap.get(address);
             if (callHandler == null) {
                 try {
                     callHandler = createCaller(address);
                 } catch (Exception e) {
-                    LOGGER.warn("Can't connect to ["+address+"]");
+                    LOGGER.warn("Can't connect to [" + address + "]");
                     continue;
                 }
             }
@@ -321,14 +333,14 @@ public class DefaultClient implements Client, ServiceManager, CallHandlerManager
     @Override
     public LoadBalanceStrategy getLoadBalanceStrategy(String type) {
         Class<? extends LoadBalanceStrategy> clz = loadBalanceStrategyMap.get(type);
-        if(clz==null){
+        if (clz == null) {
             return null;
         }
         try {
             Constructor<? extends LoadBalanceStrategy> constructor = clz.getDeclaredConstructor(ServiceManager.class, CallHandlerManager.class);
             return constructor.newInstance(this, this);
-        } catch (NoSuchMethodException |IllegalAccessException|InvocationTargetException |InstantiationException e) {
-            LOGGER.error(e.getMessage(),e);
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException | InstantiationException e) {
+            LOGGER.error("Consturct class ["+clz+"] occur error", e);
             return null;
         }
     }
@@ -340,8 +352,8 @@ public class DefaultClient implements Client, ServiceManager, CallHandlerManager
             Field typeField = strategy.getDeclaredField("LOAD_BALANCE_TYPE");
             String type = (String) typeField.get(null);
             loadBalanceStrategyMap.put(type, strategy);
-        } catch (NoSuchFieldException|IllegalAccessException e) {
-            LOGGER.error(e.getMessage(),e);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            LOGGER.error("Get load balance literal occur error", e);
         }
 
     }
@@ -349,16 +361,16 @@ public class DefaultClient implements Client, ServiceManager, CallHandlerManager
     @Override
     public boolean watchService(String serviceName) {
         String path = "/" + serviceName.replaceAll("\\.", "/");
-        PathChildrenCache childrenCache = new PathChildrenCache(zkClient, path, true);
+        PathChildrenCache childrenCache = new PathChildrenCache(zkClient, path, false);
         childrenCache.getListenable().addListener(childWatcher);
-        NodeCache currentNode=new NodeCache(zkClient,path,true);
+        NodeCache currentNode = new NodeCache(zkClient, path, false);
         currentNode.getListenable().addListener(new LoadBalanceWatcher(serviceName));
         try {
             childrenCache.start();
             currentNode.start();
             return true;
         } catch (Exception e) {
-            LOGGER.error(e.getMessage(), e);
+            LOGGER.error("Watch service ["+serviceName+"] occur error", e);
             return false;
         }
     }
@@ -384,30 +396,30 @@ public class DefaultClient implements Client, ServiceManager, CallHandlerManager
         if (originalInformation != null) {
             loadBalance = originalInformation.getLoadBalanceType();
         } else {
-            loadBalance=getLoadBalanceTypeFromCoordination(serviceName);
+            loadBalance = getLoadBalanceTypeFromCoordination(serviceName);
         }
         return loadBalance;
     }
 
-    private String getLoadBalanceTypeFromCoordination(String serviceName){
+    private String getLoadBalanceTypeFromCoordination(String serviceName) {
         String loadBalance;
         if (zkClient == null || zkClient.getState() != CuratorFrameworkState.STARTED) {
             LOGGER.warn("The zookeeper is not connecting,The load balance will use RANDOM type");
-            loadBalance = RandomLoadBalanceStrategy.LOAD_BALANCE_TYPE;
+            loadBalance = null;
         } else {
             String path = "/" + serviceName.replaceAll("\\.", "/");
             try {
-                loadBalance = new String(zkClient.getData().forPath(path));
+                loadBalance = new String(zkClient.getData().forPath(path), StandardCharsets.UTF_8);
             } catch (Exception e) {
                 LOGGER.warn("Extract load balance type from zookeeper occur error,The load balance will use RANDOM type");
-                loadBalance = RandomLoadBalanceStrategy.LOAD_BALANCE_TYPE;
+                loadBalance = null;
             }
         }
         return loadBalance;
     }
 
     @Override
-    public Map<SocketAddress,ProviderLoadBalanceConfig> extractProviderAddress(String serviceName) throws Exception {
+    public List<ProviderLoadBalanceConfig> extractProviderAddress(String serviceName) throws Exception {
         if (zkClient == null || zkClient.getState() != CuratorFrameworkState.STARTED) {
             throw new IllegalStateException("The [" + serviceName + "] is not configuration provider address,and the client is not connecting zookeeper");
         }
@@ -419,28 +431,27 @@ public class DefaultClient implements Client, ServiceManager, CallHandlerManager
 
     }
 
-    private Map<SocketAddress,ProviderLoadBalanceConfig> generateOptimal(String parentPath, List<String> childNames) throws Exception {
+    private List<ProviderLoadBalanceConfig> generateOptimal(String parentPath, List<String> childNames) throws Exception {
         List<String> configs = new ArrayList<>();
         for (String childName : childNames) {
-            String s = new String(zkClient.getData().forPath(parentPath + "/" + childName));
+            String s = new String(zkClient.getData().forPath(parentPath + "/" + childName),StandardCharsets.UTF_8);
             configs.add(s);
         }
 
         return configs.stream().map(s -> {
-            int hostIndex = s.indexOf(":");
+            int hostIndex = s.indexOf(':');
             String host = s.substring(0, hostIndex);
-            int portIndex = s.indexOf(":", hostIndex + 1);
+            int portIndex = s.indexOf(':', hostIndex + 1);
             int port = Integer.parseInt(s.substring(hostIndex + 1, portIndex));
-            InetSocketAddress address=new InetSocketAddress(host,port);
-            int weight=Integer.parseInt(s.substring(portIndex+1));
-            return new ProviderLoadBalanceConfig(address,weight);
-        }).distinct().collect(Collectors.toMap(ProviderLoadBalanceConfig::getAddress,
-                providerLoadBalanceConfig -> providerLoadBalanceConfig));
+            InetSocketAddress address = new InetSocketAddress(host, port);
+            int weight = Integer.parseInt(s.substring(portIndex + 1));
+            return new ProviderLoadBalanceConfig(address, weight);
+        }).distinct().collect(Collectors.toList());
     }
 
 
     private String getServiceByPath(String fullPath) {
-        String parentPath = fullPath.substring(0, fullPath.lastIndexOf("/"));
+        String parentPath = fullPath.substring(0, fullPath.lastIndexOf('/'));
         return parentPath.substring(1).replaceAll("/", "\\.");
     }
 }

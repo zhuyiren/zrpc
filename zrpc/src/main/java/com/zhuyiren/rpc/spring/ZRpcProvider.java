@@ -1,7 +1,7 @@
 package com.zhuyiren.rpc.spring;
 
 import com.zhuyiren.rpc.common.ZRpcPropertiesConstant;
-import com.zhuyiren.rpc.handler.RandomLoadBalanceStrategy;
+import com.zhuyiren.rpc.loadbalance.RandomLoadBalanceStrategy;
 import org.springframework.stereotype.Service;
 
 import java.lang.annotation.ElementType;
