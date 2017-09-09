@@ -255,9 +255,10 @@ public class DefaultClient implements Client, ServiceManager, CallHandlerManager
                 continue;
             }
             boolean isContain = false;
-            for (int index = 0; index < unique.size(); index++) {
-                if (config.getLoadBalanceType().equals(unique.get(index).getLoadBalanceType())) {
-                    isContain = true;
+
+            for (ProviderLoadBalanceConfig uniqueConfig : unique) {
+                if(config.getLoadBalanceType().equals(uniqueConfig.getLoadBalanceType())){
+                    isContain=true;
                     break;
                 }
             }

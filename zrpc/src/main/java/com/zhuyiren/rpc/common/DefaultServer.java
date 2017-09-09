@@ -211,7 +211,7 @@ public class DefaultServer implements Server {
         int port = address.getPort();
         StringBuilder sb = new StringBuilder();
         sb.append(hostString).append(':').append(port);
-        sb.append(":").append(loadBalanceProperty);
+        sb.append(':').append(loadBalanceProperty);
 
         if (writeZookeeperConfig(path, sb.toString(), loadBalanceType)) {
             LOGGER.debug("register service:[" + serviceName + "] to zookeeper");
