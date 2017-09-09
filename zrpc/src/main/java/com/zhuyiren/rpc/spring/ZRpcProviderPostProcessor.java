@@ -17,6 +17,8 @@
 package com.zhuyiren.rpc.spring;
 
 import com.google.common.base.Strings;
+import com.zhuyiren.rpc.common.ProviderLoadBalanceConfig;
+import com.zhuyiren.rpc.utils.CommonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
@@ -39,10 +41,8 @@ public class ZRpcProviderPostProcessor implements BeanFactoryPostProcessor {
     private static final Logger LOGGER = LoggerFactory.getLogger(ZRpcProviderPostProcessor.class);
 
     private static final String ATTRIBUTE_SERVICE_NAME = "serviceName";
-    private static final String ATTRIBUTE_HOST = "host";
-    private static final String ATTRIBUTE_PORT = "port";
+    private static final String ATTRIBUTE_PROVIDER_INFORMATION = "providerInfo";
     private static final String ATTRIBUTE_SERVER = "server";
-    private static final String ATTRIBUTE_LOAD_BALANCE_TYPE = "loadBalanceType";
 
     private BeanNameGenerator nameGenerator = new DefaultBeanNameGenerator();
 
@@ -84,12 +84,13 @@ public class ZRpcProviderPostProcessor implements BeanFactoryPostProcessor {
         }
         providerBeanDefinition.getPropertyValues().addPropertyValue("serviceName", attrServiceName);
 
-        String attrHost = (String) attributes.get(ATTRIBUTE_HOST);
-        providerBeanDefinition.getPropertyValues().addPropertyValue("host", attrHost);
+
+        String attrProviderInfo = (String) attributes.get(ATTRIBUTE_PROVIDER_INFORMATION);
 
 
-        int attrPort = (int) attributes.get(ATTRIBUTE_PORT);
-        providerBeanDefinition.getPropertyValues().addPropertyValue("port", attrPort);
+        ProviderLoadBalanceConfig providerInfo = CommonUtils.parseloadBalanceConfig(attrProviderInfo);
+        providerBeanDefinition.getPropertyValues().addPropertyValue("providerInfo", providerInfo);
+
 
         String attrServer = (String) attributes.get(ATTRIBUTE_SERVER);
         if (!Strings.isNullOrEmpty(attrServer)) {
@@ -100,8 +101,6 @@ public class ZRpcProviderPostProcessor implements BeanFactoryPostProcessor {
         RuntimeBeanReference handlerReference = new RuntimeBeanReference(beanDefinitionHolder.getBeanName());
         providerBeanDefinition.getPropertyValues().addPropertyValue("handler", handlerReference);
 
-        String loadBalanceType = (String) attributes.get(ATTRIBUTE_LOAD_BALANCE_TYPE);
-        providerBeanDefinition.getPropertyValues().addPropertyValue("loadBalanceType", loadBalanceType);
         registry.registerBeanDefinition(nameGenerator.generateBeanName(providerBeanDefinition, registry), providerBeanDefinition);
     }
 

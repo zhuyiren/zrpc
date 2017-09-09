@@ -24,7 +24,7 @@ import java.util.Map;
  * @author zhuyiren
  * @date 2017/8/8
  */
-public class ProviderInformation {
+public class ProviderState {
 
     private static final String SEPARATOR = System.getProperty("line.separator");
 
@@ -32,7 +32,7 @@ public class ProviderInformation {
     private boolean isStart;
     private Map<String, Object> services;
 
-    public ProviderInformation(SocketAddress address) {
+    public ProviderState(SocketAddress address) {
         this.address = address;
         services = new HashMap<>();
         isStart = false;
@@ -83,4 +83,6 @@ public class ProviderInformation {
     public void setStart(boolean start) {
         isStart = start;
     }
+
+
 }

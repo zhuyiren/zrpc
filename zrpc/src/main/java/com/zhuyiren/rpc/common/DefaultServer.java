@@ -60,7 +60,7 @@ public class DefaultServer implements Server {
     private static final int DEFAULT_IO_THREAD_SIZE = Runtime.getRuntime().availableProcessors();
 
 
-    private List<ProviderInformation> services = new CopyOnWriteArrayList<>();
+    private List<ProviderState> providerStates = new CopyOnWriteArrayList<>();
     private NioEventLoopGroup nioExecutors;
     private EventExecutorGroup businessExecutors;
     private ServerBootstrap serverBootstrap;
@@ -108,36 +108,36 @@ public class DefaultServer implements Server {
     }
 
     @Override
-    public boolean register(String serviceName, Object handler, String type, String host, int port,String loadBalanceInfo) {
-        if (Strings.isNullOrEmpty(host)) {
-            host = this.host;
+    public boolean register(String serviceName, Object handler,ProviderLoadBalanceConfig providerInfo) {
+
+        SocketAddress address=providerInfo.getAddress();
+        String loadBalanceType=providerInfo.getLoadBalanceType();
+        String loadBalanceProperty = providerInfo.getLoadBalanceProperty();
+        if(providerInfo.getAddress()==null){
+            address=new InetSocketAddress(host,port);
         }
-        if (port <= 0) {
-            port = this.port;
-        }
-        if (ANY_HOST.equals(host)) {
+        if (ANY_HOST.equals(((InetSocketAddress) providerInfo.getAddress()).getHostString())) {
             throw new IllegalArgumentException("The provider host must not be 0.0.0.0");
         }
-        if (type == null) {
+        if (providerInfo.getLoadBalanceType() == null) {
             LOGGER.warn("The load balance type is null,and will use random type by default");
-            type = RandomLoadBalanceStrategy.LOAD_BALANCE_TYPE;
+            loadBalanceType=RandomLoadBalanceStrategy.LOAD_BALANCE_TYPE;
         }
-        InetSocketAddress address = new InetSocketAddress(host, port);
-        ProviderInformation provider = findProvider(address);
+        ProviderState provider = findProvider(address);
         if (provider == null) {
-            provider = new ProviderInformation(address);
-            services.add(provider);
+            provider = new ProviderState(providerInfo.getAddress());
+            providerStates.add(provider);
             start(provider.getAddress());
         }
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("启动服务：[服务地址:" + provider.getAddress() + "],[服务名称:" + serviceName + "],[处理类:" + handler + "] loadBalanceType:[" + type + "]");
+            LOGGER.debug("启动服务：[服务地址:" + provider.getAddress() + "],[服务名称:" + serviceName + "],[处理类:" + handler + "] loadBalanceType:[" + loadBalanceType + "]");
         }
 
         try {
             if(!(provider.getAddress() instanceof InetSocketAddress)){
                 throw new IllegalArgumentException("The address ["+provider.getAddress()+"] is not valid address");
             }
-            registerZookeeper(((InetSocketAddress) provider.getAddress()), serviceName, type,loadBalanceInfo);
+            registerZookeeper(((InetSocketAddress) provider.getAddress()), serviceName, loadBalanceType,loadBalanceProperty);
         } catch (Exception e) {
             LOGGER.error("Write provider information to zookeeper occur error", e);
             return false;
@@ -153,7 +153,7 @@ public class DefaultServer implements Server {
 
     @Override
     public boolean register(String serviceName, Object handler, String type) {
-        return register(serviceName, handler, type, host, port,null);
+        return register(serviceName, handler, new ProviderLoadBalanceConfig(new InetSocketAddress(host,port),RandomLoadBalanceStrategy.LOAD_BALANCE_TYPE,""));
     }
 
     @Override
@@ -162,7 +162,7 @@ public class DefaultServer implements Server {
             throw new IllegalArgumentException("监听地址无效");
         }
 
-        ProviderInformation provider = findProvider(address);
+        ProviderState provider = findProvider(address);
         if (provider == null || provider.isStart()) {
             return false;
         }
@@ -189,7 +189,7 @@ public class DefaultServer implements Server {
 
     @Override
     public Map<String, Object> getServices(SocketAddress address) {
-        ProviderInformation provider = findProvider(address);
+        ProviderState provider = findProvider(address);
         return provider == null ? new HashMap<>() : provider.getServices();
     }
 
@@ -199,7 +199,7 @@ public class DefaultServer implements Server {
     }
 
 
-    private void registerZookeeper(InetSocketAddress address, String serviceName, String type,String loadBalanceInfo) throws Exception {
+    private void registerZookeeper(InetSocketAddress address, String serviceName, String loadBalanceType,String loadBalanceProperty) throws Exception {
 
         if (zkClient == null || zkClient.getState() != CuratorFrameworkState.STARTED) {
             LOGGER.warn("The server is not registering service information to zookeeper,because it not connecting the zookeeper");
@@ -211,18 +211,15 @@ public class DefaultServer implements Server {
         int port = address.getPort();
         StringBuilder sb = new StringBuilder();
         sb.append(hostString).append(':').append(port);
-        if(Strings.isNullOrEmpty(loadBalanceInfo)){
-            loadBalanceInfo="1";
-        }
-        sb.append(':').append(loadBalanceInfo);
+        sb.append(":").append(loadBalanceProperty);
 
-        if (writeZookeeperConfig(path, sb.toString(), type)) {
+        if (writeZookeeperConfig(path, sb.toString(), loadBalanceType)) {
             LOGGER.debug("register service:[" + serviceName + "] to zookeeper");
         }
     }
 
-    private ProviderInformation findProvider(SocketAddress address) {
-        for (ProviderInformation provider : services) {
+    private ProviderState findProvider(SocketAddress address) {
+        for (ProviderState provider : providerStates) {
             if (provider.getAddress().equals(address)) {
                 return provider;
             }

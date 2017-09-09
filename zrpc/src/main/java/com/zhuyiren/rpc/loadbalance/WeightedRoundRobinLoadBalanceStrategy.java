@@ -76,10 +76,11 @@ public class WeightedRoundRobinLoadBalanceStrategy implements LoadBalanceStrateg
         List<ProviderWeightHolder> holders=new CopyOnWriteArrayList<>();
         int sum=0;
         for (ProviderLoadBalanceConfig config : loadBalanceConfigs) {
-            Range<Integer> range = Range.closedOpen(sum, sum + config.getWeight());
+            int weight = Integer.parseInt(config.getLoadBalanceProperty());
+            Range<Integer> range = Range.closedOpen(sum, sum + weight);
             ProviderWeightHolder holder = new ProviderWeightHolder(config.getAddress(), range);
             holders.add(holder);
-            sum+=config.getWeight();
+            sum+=weight;
         }
         total=sum;
         this.holders=holders;

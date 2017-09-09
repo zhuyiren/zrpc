@@ -62,7 +62,7 @@
         </xsd:attribute>
         <xsd:attribute name="useZip" type="xsd:boolean"/>
         <xsd:attribute name="zkConnectUrl" type="xsd:string"/>
-        <xsd:attribute name="zkNamespace" type="xsd:string" use="required"/>
+        <xsd:attribute name="zkNamespace" type="xsd:string"/>
     </xsd:attributeGroup>
 
 

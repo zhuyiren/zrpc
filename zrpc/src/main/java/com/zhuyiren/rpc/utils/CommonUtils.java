@@ -17,6 +17,7 @@
 package com.zhuyiren.rpc.utils;
 
 import com.google.common.base.Strings;
+import com.zhuyiren.rpc.common.ProviderLoadBalanceConfig;
 import org.springframework.beans.factory.config.TypedStringValue;
 import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.beans.factory.xml.BeanDefinitionParserDelegate;
@@ -28,6 +29,8 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static com.zhuyiren.rpc.common.ZRpcPropertiesConstant.ANY_HOST;
 
@@ -36,6 +39,8 @@ import static com.zhuyiren.rpc.common.ZRpcPropertiesConstant.ANY_HOST;
  * @date 2017/9/3
  */
 public final class CommonUtils {
+
+    private static final Pattern PATTERN_PROVIDER_LOAD_BALANCE_INFO=Pattern.compile("^(\\S*):(\\d*):(\\S*):(\\S*)$");
 
 
     private CommonUtils() {
@@ -83,4 +88,23 @@ public final class CommonUtils {
         }
         return result;
     }
+
+
+    public static ProviderLoadBalanceConfig parseloadBalanceConfig(String config){
+        Matcher matcher = PATTERN_PROVIDER_LOAD_BALANCE_INFO.matcher(config);
+        if(!matcher.find()){
+            throw new IllegalArgumentException("The property provider information is not hte pattern [host:ip:loadBalanceType:loadBalanceProperty]");
+        }
+        String host=matcher.group(1);
+        String port = matcher.group(2);
+        String loadBalanceType=matcher.group(3);
+        String loadBalanceProperty = matcher.group(4);
+
+        SocketAddress address=null;
+        if(!Strings.isNullOrEmpty(host) && !Strings.isNullOrEmpty(port)){
+            address=new InetSocketAddress(host,Integer.parseInt(port));
+        }
+        return new ProviderLoadBalanceConfig(address, loadBalanceType, loadBalanceProperty);
+    }
+
 }

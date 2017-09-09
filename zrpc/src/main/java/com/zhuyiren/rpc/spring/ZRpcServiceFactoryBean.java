@@ -20,6 +20,8 @@ import com.zhuyiren.rpc.common.Client;
 import com.zhuyiren.rpc.common.ProviderLoadBalanceConfig;
 import com.zhuyiren.rpc.engine.Engine;
 import com.zhuyiren.rpc.utils.CommonUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.SmartFactoryBean;
 import org.springframework.context.ApplicationContext;
@@ -34,6 +36,7 @@ import java.util.stream.Collectors;
  */
 public class ZRpcServiceFactoryBean implements SmartFactoryBean, ApplicationContextAware {
 
+    private static final Logger LOGGER= LoggerFactory.getLogger(ZRpcServiceFactoryBean.class);
 
     private Class<?> ifcCls;
     private Client client;
@@ -59,9 +62,15 @@ public class ZRpcServiceFactoryBean implements SmartFactoryBean, ApplicationCont
 
 
         if (client == null) {
-            this.client = context.getBean(Client.class);
+            client = context.getBean(Client.class);
+            if (client == null) {
+                throw new IllegalStateException("The client is not set and don't find from the application");
+            } else {
+                LOGGER.warn("The client is not set,find the default client for using from application");
+            }
         }
-        return client.exportService(engine, ifcCls, serviceName, providers,loadBalanceString);
+
+        return client.exportService(engine, ifcCls, serviceName, providers);
     }
 
     @Override

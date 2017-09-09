@@ -23,12 +23,8 @@ public @interface ZRpcProvider {
 
     String serviceName() default "";
 
-    String host() default "";
-
-    int port() default ZRpcPropertiesConstant.DEFAULT_PORT;
+    String providerInfo() default "";
 
     String server() default "";
-
-    String loadBalanceType() default RandomLoadBalanceStrategy.LOAD_BALANCE_TYPE;
 
 }

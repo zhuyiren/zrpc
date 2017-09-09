@@ -19,13 +19,19 @@ package com.github.zhuyiren.demo.service;
 import com.github.zhuyiren.demo.model.TeacherInfo;
 import com.zhuyiren.rpc.engine.JsonEngine;
 import com.zhuyiren.rpc.engine.ProtostuffEngine;
+import com.zhuyiren.rpc.loadbalance.WeightedRoundRobinLoadBalanceStrategy;
 import com.zhuyiren.rpc.spring.ZRpcService;
 
 /**
  * @author zhuyiren
  * @date 2017/9/2
  */
-@ZRpcService(value = "hostUserService",serviceName = "com.github.zhuyiren.demo.service.StudentService",client ="demoClient",engine = ProtostuffEngine.class,ifcCls = StudentService.class)
+@ZRpcService(value = "hostUserService"
+        /*providers={"192.168.78.1:3324:"+ WeightedRoundRobinLoadBalanceStrategy.LOAD_BALANCE_TYPE+":1",
+        "192.168.78.1:3325:"+ WeightedRoundRobinLoadBalanceStrategy.LOAD_BALANCE_TYPE+":2"}*/
+        /*serviceName = "com.github.zhuyiren.demo.service.StudentService",
+        client ="demoClient",
+        engine = ProtostuffEngine.class*/)
 public interface StudentService {
 
 

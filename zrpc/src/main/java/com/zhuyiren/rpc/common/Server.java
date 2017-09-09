@@ -28,8 +28,7 @@ import java.util.Objects;
  */
 public interface Server {
 
-    boolean register(String serviceName, Object handler, String type, String host,int port,String loadBalanceInfo);
-
+    boolean register(String serviceName, Object handler,ProviderLoadBalanceConfig providerInfo);
 
     boolean register(String serviceName,Object handler,String type);
 

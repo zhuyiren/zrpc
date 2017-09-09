@@ -25,11 +25,13 @@ import java.net.SocketAddress;
 public class ProviderLoadBalanceConfig {
 
     private final SocketAddress address;
-    private final int weight;
+    private final String loadBalanceType;
+    private final String loadBalanceProperty;
 
-    public ProviderLoadBalanceConfig(SocketAddress address, int weight) {
+    public ProviderLoadBalanceConfig(SocketAddress address,String loadBalanceType, String loadBalanceProperty) {
         this.address = address;
-        this.weight = weight;
+        this.loadBalanceType=loadBalanceType;
+        this.loadBalanceProperty = loadBalanceProperty;
     }
 
 
@@ -37,7 +39,21 @@ public class ProviderLoadBalanceConfig {
         return address;
     }
 
-    public int getWeight() {
-        return weight;
+    public String getLoadBalanceProperty() {
+        return loadBalanceProperty;
+    }
+
+    public String getLoadBalanceType(){
+        return loadBalanceType;
+    }
+
+
+    @Override
+    public String toString() {
+        return "ProviderLoadBalanceConfig{" +
+                "address=" + address +
+                ", loadBalanceType='" + loadBalanceType + '\'' +
+                ", loadBalanceProperty='" + loadBalanceProperty + '\'' +
+                '}';
     }
 }

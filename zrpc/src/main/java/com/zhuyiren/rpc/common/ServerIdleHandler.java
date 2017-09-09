@@ -34,6 +34,7 @@ public class ServerIdleHandler extends ChannelInboundHandlerAdapter {
 
     static {
         PACKET_PONG=new Packet();
+        PACKET_PONG.setId(-1);
         PACKET_PONG.setType(ZRpcPropertiesConstant.IDLE_PONG);
     }
 

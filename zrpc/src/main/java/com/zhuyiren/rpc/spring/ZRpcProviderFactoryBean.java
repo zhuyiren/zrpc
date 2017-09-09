@@ -17,6 +17,7 @@
 package com.zhuyiren.rpc.spring;
 
 import com.google.common.base.Strings;
+import com.zhuyiren.rpc.common.ProviderLoadBalanceConfig;
 import com.zhuyiren.rpc.common.Server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,6 +27,8 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.util.ClassUtils;
 
+import java.util.regex.Pattern;
+
 /**
  * @author zhuyiren
  * @date 2017/8/10
@@ -33,14 +36,10 @@ import org.springframework.util.ClassUtils;
 public class ZRpcProviderFactoryBean implements SmartFactoryBean, ApplicationContextAware {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ZRpcProviderFactoryBean.class);
-
     private String serviceName;
-    private String host;
-    private int port;
     private Object handler;
     private Server server;
-    private String loadBalanceType;
-    private String loadBalanceInfo;
+    private ProviderLoadBalanceConfig providerInfo;
     private ApplicationContext context;
 
 
@@ -70,7 +69,7 @@ public class ZRpcProviderFactoryBean implements SmartFactoryBean, ApplicationCon
                 throw new IllegalStateException("Can't determine the service name");
             }
         }
-        server.register(serviceName, handler, loadBalanceType, host, port,loadBalanceInfo);
+        server.register(serviceName, handler,providerInfo);
         return handler;
     }
 
@@ -102,21 +101,6 @@ public class ZRpcProviderFactoryBean implements SmartFactoryBean, ApplicationCon
         this.serviceName = serviceName;
     }
 
-    public String getHost() {
-        return host;
-    }
-
-    public void setHost(String host) {
-        this.host = host;
-    }
-
-    public int getPort() {
-        return port;
-    }
-
-    public void setPort(int port) {
-        this.port = port;
-    }
 
     public Object getHandler() {
         return handler;
@@ -134,19 +118,13 @@ public class ZRpcProviderFactoryBean implements SmartFactoryBean, ApplicationCon
         this.server = server;
     }
 
-    public String getLoadBalanceType() {
-        return loadBalanceType;
+
+
+    public ProviderLoadBalanceConfig getProviderInfo() {
+        return providerInfo;
     }
 
-    public void setLoadBalanceType(String loadBalanceType) {
-        this.loadBalanceType = loadBalanceType;
-    }
-
-    public String getLoadBalanceInfo() {
-        return loadBalanceInfo;
-    }
-
-    public void setLoadBalanceInfo(String loadBalanceInfo) {
-        this.loadBalanceInfo = loadBalanceInfo;
+    public void setProviderInfo(ProviderLoadBalanceConfig providerInfo) {
+        this.providerInfo = providerInfo;
     }
 }

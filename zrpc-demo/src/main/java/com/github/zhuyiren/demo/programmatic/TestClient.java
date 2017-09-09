@@ -42,7 +42,7 @@ public class TestClient {
         client.registerLoadBalance(WeightedRoundRobinLoadBalanceStrategy.class);
         client.registerLoadBalance(RandomLoadBalanceStrategy.class);
         client.registerLoadBalance(RoundRobinLoadBalanceStrategy.class);
-        StudentService studentService = client.exportService(ProtostuffEngine.class, StudentService.class, null,null);
+        StudentService studentService = client.exportService(ProtostuffEngine.class, StudentService.class,null);
         while (true){
             try {
                 TeacherInfo teacher = studentService.getTeacher(3);

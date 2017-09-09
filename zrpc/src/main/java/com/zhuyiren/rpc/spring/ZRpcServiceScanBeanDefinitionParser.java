@@ -19,6 +19,7 @@ package com.zhuyiren.rpc.spring;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.zhuyiren.rpc.common.ProviderLoadBalanceConfig;
+import com.zhuyiren.rpc.utils.CommonUtils;
 import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
@@ -39,6 +40,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 /**
  * @author zhuyiren
@@ -50,6 +52,8 @@ public class ZRpcServiceScanBeanDefinitionParser implements BeanDefinitionParser
     private static final String ATTRIBUTE_BASE_PACKAGE = "base-package";
     private static final String ATTRIBUTE_PROVIDERS="providers";
     private static final BeanNameGenerator NAME_GENERATOR = new AnnotationBeanNameGenerator();
+    private static final Pattern PATTERN_PROVIDER_LOAD_BALANCE_INFO=Pattern.compile("^(\\S*):(\\d*):(\\S*):(\\S*)$");
+
 
 
     private static final TypeFilter SERVICE_TYPE_FILTER = (metadataReader, metadataReaderFactory) -> metadataReader.getAnnotationMetadata().hasAnnotation(ZRpcService.class.getCanonicalName())
@@ -63,7 +67,7 @@ public class ZRpcServiceScanBeanDefinitionParser implements BeanDefinitionParser
         String[] basePackages = StringUtils.tokenizeToStringArray(basePackage,
                 ConfigurableApplicationContext.CONFIG_LOCATION_DELIMITERS);
 
-        // Actually scan for bean definitions and register them.
+
         ClassPathScanningCandidateComponentProvider scanner = configureScanner(parserContext);
         try {
             parseAndRegister(parserContext, scanner, basePackages, element);
@@ -101,10 +105,7 @@ public class ZRpcServiceScanBeanDefinitionParser implements BeanDefinitionParser
         RootBeanDefinition rootBeanDefinition = new RootBeanDefinition();
         rootBeanDefinition.setLazyInit(false);
         rootBeanDefinition.setBeanClass(ZRpcServiceFactoryBean.class);
-        Class<?> attrIfcCls = (Class<?>) attributes.get("ifcCls");
-        if (attrIfcCls.equals(Object.class)) {
-            attrIfcCls = Class.forName(beanDefinition.getBeanClassName());
-        }
+        Class<?> attrIfcCls =  Class.forName(beanDefinition.getBeanClassName());
         rootBeanDefinition.getPropertyValues().addPropertyValue("ifcCls", attrIfcCls);
 
         String attrClient = (String) attributes.get("client");
@@ -123,15 +124,14 @@ public class ZRpcServiceScanBeanDefinitionParser implements BeanDefinitionParser
         }
         rootBeanDefinition.getPropertyValues().addPropertyValue("serviceName", serviceName);
 
-        String attrProviders = (String) attributes.get(ATTRIBUTE_PROVIDERS);
-        List<String> attrList = Splitter.on(",").omitEmptyStrings().trimResults().splitToList(attrProviders);
+        String[] attrProviders = (String[]) attributes.get(ATTRIBUTE_PROVIDERS);
 
-        Splitter splitter = Splitter.on(":").omitEmptyStrings().trimResults();
         List<ProviderLoadBalanceConfig> providers=new ArrayList<>();
-        for (String attrProvider : attrList) {
-            List<String> list = splitter.splitToList(attrProvider);
-            InetSocketAddress address = new InetSocketAddress(list.get(0), Integer.parseInt(list.get(1)));
-            ProviderLoadBalanceConfig provider = new ProviderLoadBalanceConfig(address, Integer.parseInt(list.get(2)));
+        for (String attrProvider : attrProviders) {
+            if(Strings.isNullOrEmpty(attrProvider)){
+                continue;
+            }
+            ProviderLoadBalanceConfig provider = CommonUtils.parseloadBalanceConfig(attrProvider);
             providers.add(provider);
         }
         rootBeanDefinition.getPropertyValues().addPropertyValue("providers",providers);

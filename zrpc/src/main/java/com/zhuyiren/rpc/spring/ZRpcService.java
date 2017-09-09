@@ -23,13 +23,11 @@ public @interface ZRpcService {
 
     String value() default "";
 
-    Class<?> ifcCls() default Object.class;
-
     String client() default "";
 
     Class<? extends Engine> engine() default com.zhuyiren.rpc.engine.ProtostuffEngine.class;
 
-    String providers() default "";
+    String[] providers() default "";
 
     String serviceName() default "";
 }

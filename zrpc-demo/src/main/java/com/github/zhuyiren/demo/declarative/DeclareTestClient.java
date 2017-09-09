@@ -29,7 +29,8 @@ public class DeclareTestClient {
     public static void main(String[] args){
         ClassPathXmlApplicationContext context=new ClassPathXmlApplicationContext("client.xml");
         StudentService studentService = context.getBean(StudentService.class);
-        TeacherInfo teacher = studentService.getTeacher(3);
-        System.out.println(teacher);
+        while (true){
+            studentService.getTeacher(3);
+        }
     }
 }
