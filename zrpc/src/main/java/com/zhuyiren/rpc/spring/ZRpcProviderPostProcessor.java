@@ -87,10 +87,10 @@ public class ZRpcProviderPostProcessor implements BeanFactoryPostProcessor {
 
         String attrProviderInfo = (String) attributes.get(ATTRIBUTE_PROVIDER_INFORMATION);
 
-
-        ProviderLoadBalanceConfig providerInfo = CommonUtils.parseloadBalanceConfig(attrProviderInfo);
-        providerBeanDefinition.getPropertyValues().addPropertyValue("providerInfo", providerInfo);
-
+        if(!Strings.isNullOrEmpty(attrProviderInfo)) {
+            ProviderLoadBalanceConfig providerInfo = CommonUtils.parseLoadBalanceConfig(attrProviderInfo);
+            providerBeanDefinition.getPropertyValues().addPropertyValue("providerInfo", providerInfo);
+        }
 
         String attrServer = (String) attributes.get(ATTRIBUTE_SERVER);
         if (!Strings.isNullOrEmpty(attrServer)) {

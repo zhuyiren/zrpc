@@ -110,22 +110,22 @@ public class DefaultServer implements Server {
     @Override
     public boolean register(String serviceName, Object handler,ProviderLoadBalanceConfig providerInfo) {
 
-        SocketAddress address=providerInfo.getAddress();
-        String loadBalanceType=providerInfo.getLoadBalanceType();
-        String loadBalanceProperty = providerInfo.getLoadBalanceProperty();
-        if(providerInfo.getAddress()==null){
+        SocketAddress address=providerInfo==null?null:providerInfo.getAddress();
+        String loadBalanceType=providerInfo==null?null:providerInfo.getLoadBalanceType();
+        String loadBalanceProperty = providerInfo==null?null:providerInfo.getLoadBalanceProperty();
+        if(address==null){
             address=new InetSocketAddress(host,port);
         }
-        if (ANY_HOST.equals(((InetSocketAddress) providerInfo.getAddress()).getHostString())) {
+        if (ANY_HOST.equals(((InetSocketAddress) address).getHostString())) {
             throw new IllegalArgumentException("The provider host must not be 0.0.0.0");
         }
-        if (providerInfo.getLoadBalanceType() == null) {
+        if (loadBalanceType == null) {
             LOGGER.warn("The load balance type is null,and will use random type by default");
             loadBalanceType=RandomLoadBalanceStrategy.LOAD_BALANCE_TYPE;
         }
         ProviderState provider = findProvider(address);
         if (provider == null) {
-            provider = new ProviderState(providerInfo.getAddress());
+            provider = new ProviderState(address);
             providerStates.add(provider);
             start(provider.getAddress());
         }

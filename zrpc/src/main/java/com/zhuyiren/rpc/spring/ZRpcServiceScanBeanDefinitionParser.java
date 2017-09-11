@@ -16,7 +16,6 @@
 
 package com.zhuyiren.rpc.spring;
 
-import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.zhuyiren.rpc.common.ProviderLoadBalanceConfig;
 import com.zhuyiren.rpc.utils.CommonUtils;
@@ -34,8 +33,6 @@ import org.springframework.core.type.filter.TypeFilter;
 import org.springframework.util.StringUtils;
 import org.w3c.dom.Element;
 
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -131,7 +128,7 @@ public class ZRpcServiceScanBeanDefinitionParser implements BeanDefinitionParser
             if(Strings.isNullOrEmpty(attrProvider)){
                 continue;
             }
-            ProviderLoadBalanceConfig provider = CommonUtils.parseloadBalanceConfig(attrProvider);
+            ProviderLoadBalanceConfig provider = CommonUtils.parseLoadBalanceConfig(attrProvider);
             providers.add(provider);
         }
         rootBeanDefinition.getPropertyValues().addPropertyValue("providers",providers);

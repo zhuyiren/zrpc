@@ -90,7 +90,7 @@ public final class CommonUtils {
     }
 
 
-    public static ProviderLoadBalanceConfig parseloadBalanceConfig(String config){
+    public static ProviderLoadBalanceConfig parseLoadBalanceConfig(String config){
         Matcher matcher = PATTERN_PROVIDER_LOAD_BALANCE_INFO.matcher(config);
         if(!matcher.find()){
             throw new IllegalArgumentException("The property provider information is not hte pattern [host:ip:loadBalanceType:loadBalanceProperty]");

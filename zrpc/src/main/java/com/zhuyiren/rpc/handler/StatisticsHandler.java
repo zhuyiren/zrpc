@@ -33,9 +33,9 @@ public class StatisticsHandler extends ChannelOutboundHandlerAdapter implements 
 
     private static final Logger LOGGER= LoggerFactory.getLogger(StatisticsHandler.class);
 
-    private AtomicLong count = new AtomicLong();
-    private AtomicLong channels = new AtomicLong();
-    private AtomicLong readCount=new AtomicLong();
+    private final AtomicLong count = new AtomicLong();
+    private final AtomicLong channels = new AtomicLong();
+    private final AtomicLong readCount=new AtomicLong();
     private long preCount = 0;
     private long preTime = System.currentTimeMillis();
     private long preReadCount=0;
