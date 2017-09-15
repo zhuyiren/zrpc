@@ -17,6 +17,7 @@
 package com.zhuyiren.rpc.common;
 
 import com.zhuyiren.rpc.engine.Writable;
+import io.protostuff.LinkBuffer;
 import io.protostuff.LinkedBuffer;
 import io.protostuff.ProtostuffIOUtil;
 import io.protostuff.Schema;
@@ -40,6 +41,7 @@ public class Packet implements Writable {
 
 
     private static final Schema<Packet> schema = RuntimeSchema.getSchema(Packet.class);
+
 
     public Packet() {
 

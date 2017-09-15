@@ -17,6 +17,8 @@
 package com.zhuyiren.rpc.handler;
 
 import java.io.Serializable;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Created by zhuyiren on 2017/6/29.
@@ -25,14 +27,41 @@ public class ArgumentHolder implements Serializable {
 
     private static final long serialVersionUID=1L;
 
-    public Class[] argumentClasses;
-    public Object[] arguments;
+    private final List<ArgumentPair> pairs=new CopyOnWriteArrayList<>();
 
-    public ArgumentHolder() {
+    private static class ArgumentPair implements Serializable{
+        private static final long serialVersionUID=1L;
+        final Object argument;
+        final Class argumentClass;
+
+        public ArgumentPair(Object argument,Class argumentClass){
+            this.argument=argument;
+            this.argumentClass=argumentClass;
+        }
     }
 
-    public ArgumentHolder(Object[] arguments, Class[] argumentClasses){
-        this.arguments=arguments;
-        this.argumentClasses=argumentClasses;
+
+    public ArgumentHolder(){
+
+    }
+
+    public void addArgument(Object argument,Class argumentClass){
+        pairs.add(new ArgumentPair(argument,argumentClass));
+    }
+
+    public Object[] arguments(){
+        Object[] objects = new Object[pairs.size()];
+        for (int index = 0; index < objects.length; index++) {
+            objects[index]=pairs.get(index).argument;
+        }
+        return objects;
+    }
+
+    public Class[] argumentClasses(){
+        Class[] classes = new Class[pairs.size()];
+        for (int index = 0; index < classes.length; index++) {
+            classes[index]=pairs.get(index).argumentClass;
+        }
+        return classes;
     }
 }

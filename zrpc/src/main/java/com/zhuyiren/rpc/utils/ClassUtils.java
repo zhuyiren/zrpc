@@ -25,20 +25,6 @@ import java.util.Map;
  */
 public final class ClassUtils {
 
-    private static final Map<Class<?>,Class<?>> primitiveMapped;
-
-    static {
-        primitiveMapped=new HashMap<>();
-        primitiveMapped.put(char.class,Character.class);
-        primitiveMapped.put(byte.class,Byte.class);
-        primitiveMapped.put(boolean.class,Boolean.class);
-        primitiveMapped.put(short.class,Short.class);
-        primitiveMapped.put(int.class,Integer.class);
-        primitiveMapped.put(float.class,Float.class);
-        primitiveMapped.put(long.class,Long.class);
-        primitiveMapped.put(double.class,Double.class);
-    }
-
 
     private ClassUtils(){
 
@@ -51,27 +37,10 @@ public final class ClassUtils {
             return false;
         }
         for (int index = 0; index < parameterTypes.length; index++) {
-            if(!compareClass(parameterTypes[index],classes[index])){
+            if (parameterTypes[index] != classes[index]) {
                 return false;
             }
         }
-
         return true;
-    }
-
-    /**
-     * @param clz1 为普通类型或者primitive类型
-     * @param clz2 为普通类型或者装箱类型
-     * @return
-     */
-    private static boolean compareClass(Class<?> clz1, Class<?> clz2) {
-        if (clz1.isAssignableFrom(clz2)) {
-            return true;
-        }
-
-        //判断是否装箱类型
-        Class<?> boxedType = primitiveMapped.get(clz1);
-        return boxedType!=null && boxedType.equals(clz2);
-
     }
 }

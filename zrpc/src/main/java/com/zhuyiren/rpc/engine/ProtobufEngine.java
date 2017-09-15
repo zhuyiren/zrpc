@@ -41,7 +41,8 @@ public class ProtobufEngine extends AbstractEngine {
 
     @Override
     public byte[] encodeArgument(ArgumentHolder argumentHolder) throws Exception {
-        return ((MessageLite) argumentHolder.arguments[0]).toByteArray();
+      //  return ((MessageLite) argumentHolder.arguments[0]).toByteArray();
+        return null;
     }
 
     @Override

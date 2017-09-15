@@ -57,8 +57,8 @@ public class CommonRequestHandlerAdapter implements RequestHandlerAdapter {
             try {
                 Engine engine = findEngine(request.getType());
                 ArgumentHolder argumentHolder = engine.decodeArgument(request.getEntity());
-                Object[] arguments = argumentHolder.arguments;
-                Class[] classes = argumentHolder.argumentClasses;
+                Object[] arguments = argumentHolder.arguments();
+                Class[] classes = argumentHolder.argumentClasses();
                 Method method = getMethod(handler.getClass(), request.getMethodName(), classes);
                 Object result = method.invoke(handler, arguments);
                 Packet response = new Packet(request);
@@ -67,14 +67,12 @@ public class CommonRequestHandlerAdapter implements RequestHandlerAdapter {
                 responseBytes = engine.encodeResult(wrapReturn);
                 response.setEntity(responseBytes);
                 return response;
-            } catch (IllegalAccessException e) {
-                exception = e.getMessage();
+            } catch (IllegalAccessException|RpcNoSuchEngineException e) {
+                exception = e.toString();
             } catch (InvocationTargetException e) {
-                exception = e.getCause().getMessage();
-            } catch (RpcNoSuchEngineException e) {
-                exception = e.getMessage();
+                exception = e.getCause().toString();
             } catch (Exception e) {
-                exception = e.getMessage();
+                exception = e.toString();
             }
         }
         Packet response = new Packet(request);
@@ -91,8 +89,8 @@ public class CommonRequestHandlerAdapter implements RequestHandlerAdapter {
     private Method getMethod(Class<?> clz, String methodName, Class[] argumentClass) {
         MethodHolder methodHolder = new MethodHolder(clz, methodName, argumentClass);
         return methodMap.computeIfAbsent(methodHolder, key -> {
-            for (Method item : clz.getMethods()) {
-                if (item.getName().equals(methodName)) {
+            for (Method item : key.targetClass.getMethods()) {
+                if (item.getName().equals(key.methodName)) {
                     if (ClassUtils.compareMethodArguments(item, argumentClass)) {
                         return item;
                     }

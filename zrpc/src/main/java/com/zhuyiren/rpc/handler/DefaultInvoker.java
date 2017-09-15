@@ -47,20 +47,11 @@ public class DefaultInvoker implements Invoker {
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 
-        final Object[] realArgument;
-        if (args == null) {
-            realArgument = new Object[]{};
-        }else {
-            realArgument=args;
+        Class<?>[] classes = methodMap.computeIfAbsent(method,key-> method.getParameterTypes());
+        ArgumentHolder argumentHolder = new ArgumentHolder();
+        for (int index = 0; index < classes.length; index++) {
+            argumentHolder.addArgument(args[index],classes[index]);
         }
-        Class<?>[] classes = methodMap.computeIfAbsent(method,key->{
-            Class[] cacheClass = new Class[realArgument.length];
-            for (int index = 0; index < realArgument.length; index++) {
-                cacheClass[index] = realArgument[index].getClass();
-            }
-            return cacheClass;
-        });
-        ArgumentHolder argumentHolder = new ArgumentHolder(args, classes);
         byte[] requestEntity = engine.encodeArgument(argumentHolder);
         Packet request = new Packet(serviceName, engine.getType(), method.getName(), requestEntity);
         Call call = new Call(request);

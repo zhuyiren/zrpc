@@ -35,6 +35,7 @@ public class ProtostuffEngine extends AbstractEngine implements Engine {
     public static final String PROTOSTUFF_TYPE = "protostuff";
 
 
+
     @Override
     public String getType() {
         return PROTOSTUFF_TYPE;

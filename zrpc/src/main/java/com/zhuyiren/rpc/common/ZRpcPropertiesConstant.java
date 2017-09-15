@@ -18,6 +18,7 @@ package com.zhuyiren.rpc.common;
 
 import com.zhuyiren.rpc.handler.ArgumentHolder;
 import io.protostuff.Schema;
+import io.protostuff.runtime.ProtostuffIdStrategy;
 import io.protostuff.runtime.RuntimeSchema;
 
 /**
@@ -26,9 +27,9 @@ import io.protostuff.runtime.RuntimeSchema;
 public final class ZRpcPropertiesConstant {
 
 
-    public static final Schema<ArgumentHolder> ARGUMENT_HELPER_SCHEMA= RuntimeSchema.getSchema(ArgumentHolder.class);
+    public static final Schema<ArgumentHolder> ARGUMENT_HELPER_SCHEMA= RuntimeSchema.getSchema(ArgumentHolder.class,new ProtostuffIdStrategy());
 
-    public static final Schema<WrapReturn> WRAP_RETURN_SCHEMA =RuntimeSchema.getSchema(WrapReturn.class);
+    public static final Schema<WrapReturn> WRAP_RETURN_SCHEMA =RuntimeSchema.getSchema(WrapReturn.class,new ProtostuffIdStrategy());
 
     public static final String IDLE_PING="ping";
 
