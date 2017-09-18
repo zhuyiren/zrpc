@@ -64,7 +64,7 @@ public class StatisticsHandler extends ChannelOutboundHandlerAdapter implements 
                 preCount = currentCount;
                 preTime = currentTime;
                 preReadCount=currentReadCount;
-            }, 10, 10, TimeUnit.SECONDS);
+            }, 1, 1, TimeUnit.SECONDS);
         }
     }
 
