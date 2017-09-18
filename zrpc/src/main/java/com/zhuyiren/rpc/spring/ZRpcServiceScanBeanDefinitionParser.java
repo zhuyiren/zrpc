@@ -17,7 +17,7 @@
 package com.zhuyiren.rpc.spring;
 
 import com.google.common.base.Strings;
-import com.zhuyiren.rpc.common.ProviderLoadBalanceConfig;
+import com.zhuyiren.rpc.common.ProviderProperty;
 import com.zhuyiren.rpc.utils.CommonUtils;
 import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -123,12 +123,12 @@ public class ZRpcServiceScanBeanDefinitionParser implements BeanDefinitionParser
 
         String[] attrProviders = (String[]) attributes.get(ATTRIBUTE_PROVIDERS);
 
-        List<ProviderLoadBalanceConfig> providers=new ArrayList<>();
+        List<ProviderProperty> providers=new ArrayList<>();
         for (String attrProvider : attrProviders) {
             if(Strings.isNullOrEmpty(attrProvider)){
                 continue;
             }
-            ProviderLoadBalanceConfig provider = CommonUtils.parseLoadBalanceConfig(attrProvider);
+            ProviderProperty provider = CommonUtils.parseLoadBalanceConfig(attrProvider);
             providers.add(provider);
         }
         rootBeanDefinition.getPropertyValues().addPropertyValue("providers",providers);

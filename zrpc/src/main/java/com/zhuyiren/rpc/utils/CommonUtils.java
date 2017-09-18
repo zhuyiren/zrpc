@@ -17,7 +17,7 @@
 package com.zhuyiren.rpc.utils;
 
 import com.google.common.base.Strings;
-import com.zhuyiren.rpc.common.ProviderLoadBalanceConfig;
+import com.zhuyiren.rpc.common.ProviderProperty;
 import org.springframework.beans.factory.config.TypedStringValue;
 import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.beans.factory.xml.BeanDefinitionParserDelegate;
@@ -90,7 +90,7 @@ public final class CommonUtils {
     }
 
 
-    public static ProviderLoadBalanceConfig parseLoadBalanceConfig(String config){
+    public static ProviderProperty parseLoadBalanceConfig(String config){
         Matcher matcher = PATTERN_PROVIDER_LOAD_BALANCE_INFO.matcher(config);
         if(!matcher.find()){
             throw new IllegalArgumentException("The property provider information is not hte pattern [host:ip:loadBalanceType:loadBalanceProperty]");
@@ -104,7 +104,7 @@ public final class CommonUtils {
         if(!Strings.isNullOrEmpty(host) && !Strings.isNullOrEmpty(port)){
             address=new InetSocketAddress(host,Integer.parseInt(port));
         }
-        return new ProviderLoadBalanceConfig(address, loadBalanceType, loadBalanceProperty);
+        return new ProviderProperty(address, loadBalanceType, loadBalanceProperty);
     }
 
 }

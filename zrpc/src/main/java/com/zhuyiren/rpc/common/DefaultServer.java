@@ -57,22 +57,22 @@ public class DefaultServer implements Server {
 
 
     private static final String ZK_SERVICE_PREFIX = "node";
-    private static final int DEFAULT_IO_THREAD_SIZE = Runtime.getRuntime().availableProcessors();
+    private static final int DEFAULT_IO_THREAD_SIZE = Runtime.getRuntime().availableProcessors()*2;
 
 
-    private List<ProviderState> providerStates = new CopyOnWriteArrayList<>();
-    private NioEventLoopGroup nioExecutors;
-    private EventExecutorGroup businessExecutors;
-    private ServerBootstrap serverBootstrap;
-    private ServerHandlerInitializer initializerHandler;
-    private String host;
-    private int port;
-    private String zkConnectUrl;
-    private CuratorFramework zkClient;
-    private String zkNamespace;
-    private int ioThreadSize;
-    private boolean useZip;
-    private List<Engine> engines;
+    private final List<ProviderState> providerStates = new CopyOnWriteArrayList<>();
+    private volatile NioEventLoopGroup nioExecutors;
+    private volatile EventExecutorGroup businessExecutors;
+    private volatile ServerBootstrap serverBootstrap;
+    private volatile ServerHandlerInitializer initializerHandler;
+    private volatile String host;
+    private volatile int port;
+    private volatile String zkConnectUrl;
+    private volatile CuratorFramework zkClient;
+    private volatile String zkNamespace;
+    private volatile int ioThreadSize;
+    private volatile boolean useZip;
+    private volatile List<Engine> engines;
 
 
     private boolean init() {
@@ -108,7 +108,7 @@ public class DefaultServer implements Server {
     }
 
     @Override
-    public boolean register(String serviceName, Object handler,ProviderLoadBalanceConfig providerInfo) {
+    public boolean register(String serviceName, Object handler,ProviderProperty providerInfo) {
 
         SocketAddress address=providerInfo==null?null:providerInfo.getAddress();
         String loadBalanceType=providerInfo==null?null:providerInfo.getLoadBalanceType();
@@ -153,7 +153,7 @@ public class DefaultServer implements Server {
 
     @Override
     public boolean register(String serviceName, Object handler, String type) {
-        return register(serviceName, handler, new ProviderLoadBalanceConfig(new InetSocketAddress(host,port),RandomLoadBalanceStrategy.LOAD_BALANCE_TYPE,""));
+        return register(serviceName, handler, new ProviderProperty(new InetSocketAddress(host,port),RandomLoadBalanceStrategy.LOAD_BALANCE_TYPE,""));
     }
 
     @Override

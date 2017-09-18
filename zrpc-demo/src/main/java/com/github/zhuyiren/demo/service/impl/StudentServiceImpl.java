@@ -23,6 +23,9 @@ import com.zhuyiren.rpc.loadbalance.RandomLoadBalanceStrategy;
 import com.zhuyiren.rpc.loadbalance.WeightedRoundRobinLoadBalanceStrategy;
 import com.zhuyiren.rpc.spring.ZRpcProvider;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * @author zhuyiren
  * @date 2017/9/2
@@ -37,14 +40,11 @@ public class StudentServiceImpl implements StudentService {
         teacher.setId(studentId);
         teacher.setName("teacher");
 
-        for (int index = 0; index < 3; index++) {
-            StudentInfo student=new StudentInfo();
-            student.setName("student"+(index+1));
-            student.setId(1L+index);
-            student.setAge(21+index);
-            student.setSex(0);
-            teacher.getStudents().add(student);
+        List<String> strings=new ArrayList<>();
+        for (int index = 0; index < studentId; index++) {
+            strings.add("zhuyiren"+index);
         }
+        teacher.setStudents(strings);
         return teacher;
     }
 }

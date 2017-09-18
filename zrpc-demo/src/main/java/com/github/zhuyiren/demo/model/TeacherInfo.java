@@ -32,7 +32,7 @@ public class TeacherInfo implements Serializable{
 
     private long id;
     private String name;
-    private List<StudentInfo> students=new ArrayList<>();
+    private List<String> students=new ArrayList<>();
 
 
     public TeacherInfo(){
@@ -54,14 +54,27 @@ public class TeacherInfo implements Serializable{
         this.name = name;
     }
 
-    public List<StudentInfo> getStudents() {
+    public List<String> getStudents() {
         return students;
     }
 
-    public void setStudents(List<StudentInfo> students) {
+    public void setStudents(List<String> students) {
         this.students = students;
     }
 
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof TeacherInfo)) return false;
+        TeacherInfo that = (TeacherInfo) o;
+        return id == that.id &&
+                Objects.equals(name, that.name) &&
+                Objects.equals(students, that.students);
+    }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, name, students);
+    }
 }

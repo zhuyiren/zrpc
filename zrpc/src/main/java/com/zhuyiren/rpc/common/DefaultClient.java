@@ -56,18 +56,27 @@ public class DefaultClient implements Client, ServiceManager, CallHandlerManager
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultClient.class);
 
-    private static final int DEFAULT_IO_THREAD_SIZE = Runtime.getRuntime().availableProcessors();
+    private static final int DEFAULT_IO_THREAD_SIZE = Runtime.getRuntime().availableProcessors()*2;
 
-    private List<Engine> engines;
-    private Map<SocketAddress, CallHandler> callerMap;
-    private Map<String, ServiceInformation> serviceInfoMaps;
-    private Map<String, Invoker> invokerMap;
-    private Map<String, Class<? extends LoadBalanceStrategy>> loadBalanceStrategyMap;
+    private final List<Engine> engines;
+    private final Map<SocketAddress, CallHandler> callerMap;
+    private final Map<String, ServiceInformation> serviceInfoMaps;
+    private final Map<String, Invoker> invokerMap;
+    private final Map<String, Class<? extends LoadBalanceStrategy>> loadBalanceStrategyMap;
 
-    private NioEventLoopGroup eventExecutors;
-    private ScheduledExecutorService connectThread;
-    private CuratorFramework zkClient;
-    private boolean useZip;
+    private volatile NioEventLoopGroup eventExecutors;
+    private final ScheduledExecutorService connectThread;
+    private volatile CuratorFramework zkClient;
+    private final boolean useZip;
+
+
+    public void setEventExecutors(NioEventLoopGroup eventExecutors){
+        this.eventExecutors=eventExecutors;
+    }
+
+    public NioEventLoopGroup getEventExecutors(){
+        return eventExecutors;
+    }
 
 
     private PathChildrenCacheListener childWatcher = new PathChildrenCacheListener() {
@@ -86,8 +95,8 @@ public class DefaultClient implements Client, ServiceManager, CallHandlerManager
                     return;
                 }
                 List<SocketAddress> originalAddresses = originalServiceInfo.getAddresses();
-                List<ProviderLoadBalanceConfig> providerLoadBalanceConfigs = extractProviderAddress(serviceName);
-                List<SocketAddress> newAddresses = providerLoadBalanceConfigs.stream().map(key -> key.getAddress()).collect(Collectors.toList());
+                List<ProviderProperty> providerProperties = extractProviderAddress(serviceName);
+                List<SocketAddress> newAddresses = providerProperties.stream().map(key -> key.getAddress()).collect(Collectors.toList());
 
                 List<SocketAddress> removeAddresses = new ArrayList<>(originalAddresses);
                 List<SocketAddress> addAddresses = new ArrayList<>(newAddresses);
@@ -108,7 +117,7 @@ public class DefaultClient implements Client, ServiceManager, CallHandlerManager
 
                 List<SocketAddress> reallyAddresses = createCallWithService(serviceName, addAddresses);
                 reallyAddresses.addAll(intersectionAddresses);
-                List<ProviderLoadBalanceConfig> configs = providerLoadBalanceConfigs.stream().filter(provider ->
+                List<ProviderProperty> configs = providerProperties.stream().filter(provider ->
                         reallyAddresses.contains(provider.getAddress())
                 ).collect(Collectors.toList());
                 serviceInfoMaps.put(serviceName, new ServiceInformation(serviceName, originalServiceInfo.getLoadBalanceType(), true, configs));
@@ -191,12 +200,12 @@ public class DefaultClient implements Client, ServiceManager, CallHandlerManager
 
 
     @Override
-    public synchronized <T> T exportService(Class<? extends Engine> engineType, Class<T> service, List<ProviderLoadBalanceConfig> providers) throws Exception {
+    public synchronized <T> T exportService(Class<? extends Engine> engineType, Class<T> service, List<ProviderProperty> providers) throws Exception {
         return exportService(engineType, service, service.getCanonicalName(), providers);
     }
 
     @Override
-    public synchronized <T> T exportService(Class<? extends Engine> engineType, Class<T> service, String serviceName, List<ProviderLoadBalanceConfig> providers) throws Exception {
+    public synchronized <T> T exportService(Class<? extends Engine> engineType, Class<T> service, String serviceName, List<ProviderProperty> providers) throws Exception {
 
         if (providers != null && providers.size() > 0) {
             List<SocketAddress> collectAddresses = providers.stream().map(key -> key.getAddress()).collect(Collectors.toList());
@@ -233,7 +242,7 @@ public class DefaultClient implements Client, ServiceManager, CallHandlerManager
 
 
         List<SocketAddress> connectedAddresses = createCallWithService(serviceName, providers.stream().map(key -> key.getAddress()).collect(Collectors.toList()));
-        List<ProviderLoadBalanceConfig> providerConfigs = providers.stream().filter((item) -> connectedAddresses.contains(item.getAddress())).collect(Collectors.toList());
+        List<ProviderProperty> providerConfigs = providers.stream().filter((item) -> connectedAddresses.contains(item.getAddress())).collect(Collectors.toList());
         ServiceInformation serviceInfo = new ServiceInformation(serviceName, loadBalanceType, isZkManage, providerConfigs);
         serviceInfoMaps.put(serviceName, serviceInfo);
 
@@ -248,15 +257,15 @@ public class DefaultClient implements Client, ServiceManager, CallHandlerManager
         return (T) o;
     }
 
-    private String checkUniqueLoadBalanceType(List<ProviderLoadBalanceConfig> configs) {
-        List<ProviderLoadBalanceConfig> unique = new ArrayList<>();
-        for (ProviderLoadBalanceConfig config : configs) {
+    private String checkUniqueLoadBalanceType(List<ProviderProperty> configs) {
+        List<ProviderProperty> unique = new ArrayList<>();
+        for (ProviderProperty config : configs) {
             if (Strings.isNullOrEmpty(config.getLoadBalanceType())) {
                 continue;
             }
             boolean isContain = false;
 
-            for (ProviderLoadBalanceConfig uniqueConfig : unique) {
+            for (ProviderProperty uniqueConfig : unique) {
                 if(config.getLoadBalanceType().equals(uniqueConfig.getLoadBalanceType())){
                     isContain=true;
                     break;
@@ -408,8 +417,8 @@ public class DefaultClient implements Client, ServiceManager, CallHandlerManager
     }
 
     @Override
-    public List<ProviderLoadBalanceConfig> getProviderLoadBalanceConfigs(String serviceName) {
-        return serviceInfoMaps.get(serviceName).getProviderLoadBalanceConfigs();
+    public List<ProviderProperty> getProviderLoadBalanceConfigs(String serviceName) {
+        return serviceInfoMaps.get(serviceName).getProviderProperties();
     }
 
     public String getLoadBalanceType(String serviceName) {
@@ -442,7 +451,7 @@ public class DefaultClient implements Client, ServiceManager, CallHandlerManager
     }
 
     @Override
-    public List<ProviderLoadBalanceConfig> extractProviderAddress(String serviceName) throws Exception {
+    public List<ProviderProperty> extractProviderAddress(String serviceName) throws Exception {
         if (zkClient == null || zkClient.getState() != CuratorFrameworkState.STARTED) {
             throw new IllegalStateException("The [" + serviceName + "] is not configuration provider address,and the client is not connecting zookeeper");
         }
@@ -454,7 +463,7 @@ public class DefaultClient implements Client, ServiceManager, CallHandlerManager
 
     }
 
-    private List<ProviderLoadBalanceConfig> generateOptimal(String parentPath, List<String> childNames) throws Exception {
+    private List<ProviderProperty> generateOptimal(String parentPath, List<String> childNames) throws Exception {
         List<String> configs = new ArrayList<>();
         for (String childName : childNames) {
             String s = new String(zkClient.getData().forPath(parentPath + "/" + childName), StandardCharsets.UTF_8);
@@ -467,7 +476,7 @@ public class DefaultClient implements Client, ServiceManager, CallHandlerManager
             int portIndex = s.indexOf(':', hostIndex + 1);
             int port = Integer.parseInt(s.substring(hostIndex + 1, portIndex));
             InetSocketAddress address = new InetSocketAddress(host, port);
-            return new ProviderLoadBalanceConfig(address, null, s.substring(portIndex + 1));
+            return new ProviderProperty(address, null, s.substring(portIndex + 1));
         }).distinct().collect(Collectors.toList());
     }
 

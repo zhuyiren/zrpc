@@ -17,7 +17,7 @@
 package com.zhuyiren.rpc.spring;
 
 import com.google.common.base.Strings;
-import com.zhuyiren.rpc.common.ProviderLoadBalanceConfig;
+import com.zhuyiren.rpc.common.ProviderProperty;
 import com.zhuyiren.rpc.utils.CommonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -88,7 +88,7 @@ public class ZRpcProviderPostProcessor implements BeanFactoryPostProcessor {
         String attrProviderInfo = (String) attributes.get(ATTRIBUTE_PROVIDER_INFORMATION);
 
         if(!Strings.isNullOrEmpty(attrProviderInfo)) {
-            ProviderLoadBalanceConfig providerInfo = CommonUtils.parseLoadBalanceConfig(attrProviderInfo);
+            ProviderProperty providerInfo = CommonUtils.parseLoadBalanceConfig(attrProviderInfo);
             providerBeanDefinition.getPropertyValues().addPropertyValue("providerInfo", providerInfo);
         }
 

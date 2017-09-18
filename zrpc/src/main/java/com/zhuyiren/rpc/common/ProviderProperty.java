@@ -22,13 +22,13 @@ import java.net.SocketAddress;
  * @author zhuyiren
  * @date 2017/9/4
  */
-public class ProviderLoadBalanceConfig {
+public class ProviderProperty {
 
     private final SocketAddress address;
     private final String loadBalanceType;
     private final String loadBalanceProperty;
 
-    public ProviderLoadBalanceConfig(SocketAddress address,String loadBalanceType, String loadBalanceProperty) {
+    public ProviderProperty(SocketAddress address, String loadBalanceType, String loadBalanceProperty) {
         this.address = address;
         this.loadBalanceType=loadBalanceType;
         this.loadBalanceProperty = loadBalanceProperty;
@@ -50,7 +50,7 @@ public class ProviderLoadBalanceConfig {
 
     @Override
     public String toString() {
-        return "ProviderLoadBalanceConfig{" +
+        return "ProviderProperty{" +
                 "address=" + address +
                 ", loadBalanceType='" + loadBalanceType + '\'' +
                 ", loadBalanceProperty='" + loadBalanceProperty + '\'' +

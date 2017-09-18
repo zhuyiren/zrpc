@@ -18,7 +18,7 @@ package com.zhuyiren.rpc.loadbalance;
 
 import com.google.common.collect.Range;
 import com.zhuyiren.rpc.common.CallHandlerManager;
-import com.zhuyiren.rpc.common.ProviderLoadBalanceConfig;
+import com.zhuyiren.rpc.common.ProviderProperty;
 import com.zhuyiren.rpc.common.ServiceManager;
 import com.zhuyiren.rpc.handler.CallHandler;
 
@@ -72,10 +72,10 @@ public class WeightedRoundRobinLoadBalanceStrategy implements LoadBalanceStrateg
 
     @Override
     public void init(String serviceName) {
-        List<ProviderLoadBalanceConfig> loadBalanceConfigs = serviceManager.getProviderLoadBalanceConfigs(serviceName);
+        List<ProviderProperty> loadBalanceConfigs = serviceManager.getProviderLoadBalanceConfigs(serviceName);
         List<ProviderWeightHolder> holders=new CopyOnWriteArrayList<>();
         int sum=0;
-        for (ProviderLoadBalanceConfig config : loadBalanceConfigs) {
+        for (ProviderProperty config : loadBalanceConfigs) {
             int weight = Integer.parseInt(config.getLoadBalanceProperty());
             Range<Integer> range = Range.closedOpen(sum, sum + weight);
             ProviderWeightHolder holder = new ProviderWeightHolder(config.getAddress(), range);

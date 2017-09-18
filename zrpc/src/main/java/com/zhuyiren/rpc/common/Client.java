@@ -36,7 +36,7 @@ public interface Client {
      * @return 如果成功，返回服务,否则抛出异常
      * @throws Exception
      */
-    <T> T exportService(Class<? extends Engine> engineType, Class<T> service, List<ProviderLoadBalanceConfig> providers ) throws Exception;
+    <T> T exportService(Class<? extends Engine> engineType, Class<T> service, List<ProviderProperty> providers ) throws Exception;
 
 
     /**
@@ -48,7 +48,7 @@ public interface Client {
      * @return 如果成功，返回服务,否则抛出异常
      * @throws Exception
      */
-    <T> T exportService(Class<? extends Engine> engineType, Class<T> service,String serviceName, List<ProviderLoadBalanceConfig> providers ) throws Exception;
+    <T> T exportService(Class<? extends Engine> engineType, Class<T> service,String serviceName, List<ProviderProperty> providers ) throws Exception;
 
 
     Engine addEngineByClass(Class<? extends Engine> engineClass) throws Exception;

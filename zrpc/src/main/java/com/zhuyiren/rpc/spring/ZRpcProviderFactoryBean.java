@@ -17,7 +17,7 @@
 package com.zhuyiren.rpc.spring;
 
 import com.google.common.base.Strings;
-import com.zhuyiren.rpc.common.ProviderLoadBalanceConfig;
+import com.zhuyiren.rpc.common.ProviderProperty;
 import com.zhuyiren.rpc.common.Server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,8 +26,6 @@ import org.springframework.beans.factory.SmartFactoryBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.util.ClassUtils;
-
-import java.util.regex.Pattern;
 
 /**
  * @author zhuyiren
@@ -39,7 +37,7 @@ public class ZRpcProviderFactoryBean implements SmartFactoryBean, ApplicationCon
     private String serviceName;
     private Object handler;
     private Server server;
-    private ProviderLoadBalanceConfig providerInfo;
+    private ProviderProperty providerInfo;
     private ApplicationContext context;
 
 
@@ -120,11 +118,11 @@ public class ZRpcProviderFactoryBean implements SmartFactoryBean, ApplicationCon
 
 
 
-    public ProviderLoadBalanceConfig getProviderInfo() {
+    public ProviderProperty getProviderInfo() {
         return providerInfo;
     }
 
-    public void setProviderInfo(ProviderLoadBalanceConfig providerInfo) {
+    public void setProviderInfo(ProviderProperty providerInfo) {
         this.providerInfo = providerInfo;
     }
 }

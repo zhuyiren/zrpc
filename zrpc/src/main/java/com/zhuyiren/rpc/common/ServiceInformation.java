@@ -32,16 +32,16 @@ public class ServiceInformation {
     private final String serviceName;
     private final boolean isManageByZookeeper;
     private final String loadBalanceType;
-    private final ImmutableList<ProviderLoadBalanceConfig> providerLoadBalanceConfigs;
+    private final ImmutableList<ProviderProperty> providerProperties;
 
-    public ServiceInformation(String serviceName, String loadBalanceType,boolean isManageByZookeeper, List<ProviderLoadBalanceConfig> providerConfigs) {
+    public ServiceInformation(String serviceName, String loadBalanceType,boolean isManageByZookeeper, List<ProviderProperty> providerConfigs) {
         this.serviceName = serviceName;
         this.loadBalanceType=loadBalanceType;
         this.isManageByZookeeper = isManageByZookeeper;
         if(providerConfigs==null){
             providerConfigs=new ArrayList<>();
         }
-        this.providerLoadBalanceConfigs = ImmutableList.copyOf(providerConfigs);
+        this.providerProperties = ImmutableList.copyOf(providerConfigs);
 
     }
 
@@ -70,7 +70,7 @@ public class ServiceInformation {
 
     public ImmutableList<SocketAddress> getAddresses() {
         List<SocketAddress> result=new ArrayList<>();
-        for (ProviderLoadBalanceConfig config : providerLoadBalanceConfigs) {
+        for (ProviderProperty config : providerProperties) {
             result.add(config.getAddress());
         }
         return ImmutableList.copyOf(result);
@@ -80,7 +80,7 @@ public class ServiceInformation {
         return loadBalanceType;
     }
 
-    public ImmutableList<ProviderLoadBalanceConfig> getProviderLoadBalanceConfigs() {
-        return providerLoadBalanceConfigs;
+    public ImmutableList<ProviderProperty> getProviderProperties() {
+        return providerProperties;
     }
 }

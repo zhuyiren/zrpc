@@ -17,7 +17,7 @@
 package com.zhuyiren.rpc.spring;
 
 import com.zhuyiren.rpc.common.Client;
-import com.zhuyiren.rpc.common.ProviderLoadBalanceConfig;
+import com.zhuyiren.rpc.common.ProviderProperty;
 import com.zhuyiren.rpc.engine.Engine;
 import com.zhuyiren.rpc.utils.CommonUtils;
 import org.slf4j.Logger;
@@ -27,7 +27,6 @@ import org.springframework.beans.factory.SmartFactoryBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
-import java.net.SocketAddress;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -41,7 +40,7 @@ public class ZRpcServiceFactoryBean implements SmartFactoryBean, ApplicationCont
     private Class<?> ifcCls;
     private Client client;
     private Class<? extends Engine> engine;
-    private List<ProviderLoadBalanceConfig> providers;
+    private List<ProviderProperty> providers;
     private String serviceName;
     private String loadBalanceString;
 
@@ -121,11 +120,11 @@ public class ZRpcServiceFactoryBean implements SmartFactoryBean, ApplicationCont
     }
 
 
-    public List<ProviderLoadBalanceConfig> getProviders() {
+    public List<ProviderProperty> getProviders() {
         return providers;
     }
 
-    public void setProviders(List<ProviderLoadBalanceConfig> providers) {
+    public void setProviders(List<ProviderProperty> providers) {
         this.providers = providers;
     }
 

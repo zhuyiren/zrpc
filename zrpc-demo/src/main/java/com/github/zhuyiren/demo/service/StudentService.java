@@ -26,12 +26,7 @@ import com.zhuyiren.rpc.spring.ZRpcService;
  * @author zhuyiren
  * @date 2017/9/2
  */
-@ZRpcService(value = "hostUserService"
-        /*providers={"192.168.78.1:3324:"+ WeightedRoundRobinLoadBalanceStrategy.LOAD_BALANCE_TYPE+":1",
-        "192.168.78.1:3325:"+ WeightedRoundRobinLoadBalanceStrategy.LOAD_BALANCE_TYPE+":2"}*/
-        /*serviceName = "com.github.zhuyiren.demo.service.StudentService",
-        client ="demoClient",
-        engine = ProtostuffEngine.class*/)
+@ZRpcService(value = "hostUserService",providers = {"192.168.78.1:3324:"+WeightedRoundRobinLoadBalanceStrategy.LOAD_BALANCE_TYPE+":1"})
 public interface StudentService {
 
 

@@ -19,16 +19,14 @@ package com.zhuyiren.rpc.common;
 import io.netty.util.concurrent.EventExecutorGroup;
 
 import java.net.SocketAddress;
-import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * Created by zhuyiren on 2017/5/18.
  */
 public interface Server {
 
-    boolean register(String serviceName, Object handler,ProviderLoadBalanceConfig providerInfo);
+    boolean register(String serviceName, Object handler,ProviderProperty providerInfo);
 
     boolean register(String serviceName,Object handler,String type);
 
