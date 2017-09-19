@@ -372,7 +372,7 @@ public class DefaultClient implements Client, ServiceManager, CallHandlerManager
             Constructor<? extends LoadBalanceStrategy> constructor = clz.getDeclaredConstructor(ServiceManager.class, CallHandlerManager.class);
             return constructor.newInstance(this, this);
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException | InstantiationException e) {
-            LOGGER.error("Consturct class [" + clz + "] occur error", e);
+            LOGGER.error("Instantiation class [" + clz + "] occur error", e);
             return null;
         }
     }
@@ -421,17 +421,6 @@ public class DefaultClient implements Client, ServiceManager, CallHandlerManager
         return serviceInfoMaps.get(serviceName).getProviderProperties();
     }
 
-    public String getLoadBalanceType(String serviceName) {
-
-        ServiceInformation originalInformation = serviceInfoMaps.get(serviceName);
-        String loadBalance;
-        if (originalInformation != null) {
-            loadBalance = originalInformation.getLoadBalanceType();
-        } else {
-            loadBalance = getLoadBalanceTypeFromCoordination(serviceName);
-        }
-        return loadBalance;
-    }
 
     private String getLoadBalanceTypeFromCoordination(String serviceName) {
         String loadBalance;
