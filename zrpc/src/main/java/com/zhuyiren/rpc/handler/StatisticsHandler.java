@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.LongAdder;
 
 /**
  * Created by zhuyiren on 2017/5/18.
@@ -33,9 +34,9 @@ public class StatisticsHandler extends ChannelOutboundHandlerAdapter implements 
 
     private static final Logger LOGGER= LoggerFactory.getLogger(StatisticsHandler.class);
 
-    private final AtomicLong count = new AtomicLong();
-    private final AtomicLong channels = new AtomicLong();
-    private final AtomicLong readCount=new AtomicLong();
+    private final LongAdder count = new LongAdder();
+    private final LongAdder channels = new LongAdder();
+    private final LongAdder readCount=new LongAdder();
     private long preCount = 0;
     private long preTime = System.currentTimeMillis();
     private long preReadCount=0;
@@ -48,7 +49,7 @@ public class StatisticsHandler extends ChannelOutboundHandlerAdapter implements 
     @Override
     public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
         super.write(ctx, msg, promise);
-        count.incrementAndGet();
+        count.increment();
     }
 
     @Override
@@ -57,10 +58,10 @@ public class StatisticsHandler extends ChannelOutboundHandlerAdapter implements 
 
         if (isStart.compareAndSet(false,true)) {
             ctx.executor().scheduleWithFixedDelay(() -> {
-                long currentCount = count.get();
+                long currentCount = count.sum();
                 long currentTime = System.currentTimeMillis();
-                long currentReadCount=readCount.get();
-                LOGGER.info("Statistics:" + (currentCount - preCount) * 1000 / (currentTime - preTime) +"-----"+(currentReadCount - preReadCount) * 1000 / (currentTime - preTime)+ "   Clients:" + channels.get() + "   sum:" + currentCount+"---sum:"+readCount.get());
+                long currentReadCount=readCount.sum();
+                LOGGER.info("Statistics:" + (currentCount - preCount) * 1000 / (currentTime - preTime) +"-----"+(currentReadCount - preReadCount) * 1000 / (currentTime - preTime)+ "   Clients:" + channels.sum() + "   sum:" + currentCount+"---sum:"+readCount.sum());
                 preCount = currentCount;
                 preTime = currentTime;
                 preReadCount=currentReadCount;
@@ -76,18 +77,18 @@ public class StatisticsHandler extends ChannelOutboundHandlerAdapter implements 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         ctx.fireChannelActive();
-        channels.incrementAndGet();
+        channels.increment();
     }
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         ctx.fireChannelInactive();
-        channels.decrementAndGet();
+        channels.decrement();
     }
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        readCount.incrementAndGet();
+        readCount.increment();
         ctx.fireChannelRead(msg);
     }
 
