@@ -33,13 +33,13 @@ public class RoundRobinLoadBalanceStrategy implements LoadBalanceStrategy {
     public static final String LOAD_BALANCE_TYPE="roundRobin";
 
     private final ServiceManager serviceManager;
-    private final CallHandlerManager callHandlerManager;
+    private final CallHandlerManager callHandlerMgr;
     private volatile List<SocketAddress> addresses;
     private volatile long currentIndex;
 
-    public RoundRobinLoadBalanceStrategy(ServiceManager serviceManager,CallHandlerManager callHandlerManager){
+    public RoundRobinLoadBalanceStrategy(ServiceManager serviceManager,CallHandlerManager callHandlerMgr){
         this.serviceManager=serviceManager;
-        this.callHandlerManager=callHandlerManager;
+        this.callHandlerMgr = callHandlerMgr;
         currentIndex=0;
     }
 
@@ -60,6 +60,11 @@ public class RoundRobinLoadBalanceStrategy implements LoadBalanceStrategy {
         if(length==0){
             return null;
         }
-        return callHandlerManager.getCallHandler(addresses.get((int) (currentIndex++ % length)));
+        return callHandlerMgr.getCallHandler(addresses.get((int) (currentIndex++ % length)));
+    }
+
+    @Override
+    public void update(Object object) {
+        return;
     }
 }

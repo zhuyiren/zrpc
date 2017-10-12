@@ -19,7 +19,9 @@ package com.zhuyiren.rpc.handler;
 import com.zhuyiren.rpc.common.Packet;
 import com.zhuyiren.rpc.common.WrapReturn;
 import com.zhuyiren.rpc.engine.Engine;
+import com.zhuyiren.rpc.loadbalance.CallDuration;
 import com.zhuyiren.rpc.loadbalance.LoadBalanceStrategy;
+import org.apache.log4j.Logger;
 
 import java.lang.reflect.Method;
 import java.util.Map;
@@ -29,7 +31,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * Created by zhuyiren on 2017/8/4.
  */
 public class DefaultInvoker implements Invoker {
-
 
     private volatile LoadBalanceStrategy strategy;
     private String serviceName;
@@ -46,7 +47,6 @@ public class DefaultInvoker implements Invoker {
 
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-
         Class<?>[] classes = methodMap.computeIfAbsent(method,key-> method.getParameterTypes());
         ArgumentHolder argumentHolder = new ArgumentHolder();
         for (int index = 0; index < classes.length; index++) {
@@ -59,7 +59,10 @@ public class DefaultInvoker implements Invoker {
         if(callHandler==null){
             throw new IllegalStateException("Can't find valid provider to do");
         }
+        long start = System.nanoTime();
         callHandler.call(call);
+        long duration = System.nanoTime() - start;
+        strategy.update(new CallDuration(callHandler,duration));
         if (call.getException() != null) {
             throw call.getException();
         }

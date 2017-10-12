@@ -88,6 +88,11 @@ public class WeightedRoundRobinLoadBalanceStrategy implements LoadBalanceStrateg
 
 
     @Override
+    public void update(Object object) {
+        return;
+    }
+
+    @Override
     public String getType() {
         return LOAD_BALANCE_TYPE;
     }

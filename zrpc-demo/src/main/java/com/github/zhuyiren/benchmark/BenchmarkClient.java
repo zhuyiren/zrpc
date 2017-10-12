@@ -18,7 +18,6 @@ package com.github.zhuyiren.benchmark;
 
 import com.github.zhuyiren.demo.model.TeacherInfo;
 import com.github.zhuyiren.demo.service.StudentService;
-import com.github.zhuyiren.demo.service.TeacherService;
 import com.github.zhuyiren.demo.service.impl.StudentServiceImpl;
 import com.google.common.base.Preconditions;
 import com.zhuyiren.rpc.common.DefaultClient;

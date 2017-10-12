@@ -28,7 +28,9 @@ import org.w3c.dom.Element;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -89,6 +91,38 @@ public final class CommonUtils {
         return result;
     }
 
+
+    public static Set<Class<?>> extractClassSet(Element parent,XmlReaderContext context,String propertyName){
+        Set<Class<?>> result = new HashSet<>();
+        List<Element> propertyElements = DomUtils.getChildElementsByTagName(parent, propertyName);
+        if(propertyElements.size()>1){
+            context.error("must only have one ["+propertyName+"] element",parent);
+        }
+        if(propertyElements.isEmpty()){
+            return result;
+        }
+        List<Element> listElements = DomUtils.getChildElementsByTagName(propertyElements.get(0), "set");
+        if(listElements.size()>1){
+            context.error("must not have more than one list element",parent);
+        }
+        Element listElement = listElements.get(0);
+        BeanDefinitionParserDelegate delegate = new BeanDefinitionParserDelegate(context);
+        RootBeanDefinition rootBeanDefinition = new RootBeanDefinition();
+        List<Object> objects = delegate.parseListElement(listElement, rootBeanDefinition);
+        for (Object object : objects) {
+            if (object instanceof TypedStringValue && !Strings.isNullOrEmpty(((TypedStringValue) object).getValue())) {
+                try {
+                    Class<?> targetClass = Class.forName(((TypedStringValue) object).getValue());
+                    result.add(targetClass);
+                } catch (ClassNotFoundException e) {
+                    context.error(e.getMessage(), listElement);
+                } catch (Exception e) {
+                    context.error(e.getMessage(), listElement);
+                }
+            }
+        }
+        return result;
+    }
 
     public static ProviderProperty parseLoadBalanceConfig(String config){
         Matcher matcher = PATTERN_PROVIDER_LOAD_BALANCE_INFO.matcher(config);

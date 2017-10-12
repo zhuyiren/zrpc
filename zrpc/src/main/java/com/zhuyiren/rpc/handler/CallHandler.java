@@ -46,7 +46,6 @@ public interface CallHandler {
 
     boolean setServiceState(String serviceName,boolean state);
 
-
     SocketAddress getRemoteAddress();
 
 }

@@ -34,6 +34,7 @@ import org.w3c.dom.Element;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Created by zhuyiren on 2017/8/3.
@@ -79,7 +80,7 @@ public class ZRpcClientBeanDefinitionParser extends AbstractSingleBeanDefinition
         String zkNamespaceAttr=element.getAttribute(ATTRIBUTE_ZK_NAMESPACE);
         builder.addPropertyValue("zkNamespace",zkNamespaceAttr);
 
-        List<Class<?>> loadBalanceClasses = CommonUtils.extractClassList(element, parserContext.getReaderContext(), ELEMENT_LOAD_BALANCE_TYPE);
+        Set<Class<?>> loadBalanceClasses = CommonUtils.extractClassSet(element, parserContext.getReaderContext(), ELEMENT_LOAD_BALANCE_TYPE);
 
         builder.addPropertyValue(ELEMENT_LOAD_BALANCE_TYPE,loadBalanceClasses);
 

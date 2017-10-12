@@ -14,20 +14,21 @@
  * limitations under the License.
  */
 
-package com.github.zhuyiren.demo.service;
+package com.zhuyiren.rpc.loadbalance;
 
-import com.github.zhuyiren.demo.model.TeacherInfo;
-import com.zhuyiren.rpc.loadbalance.WeightedRoundRobinLoadBalanceStrategy;
-import com.zhuyiren.rpc.spring.ZRpcService;
+import com.zhuyiren.rpc.handler.CallHandler;
 
 /**
  * @author zhuyiren
- * @date 2017/9/2
+ * @date 2017/10/12
  */
-@ZRpcService(value = "hostUserService",providers = {"192.168.78.1:3324:"+WeightedRoundRobinLoadBalanceStrategy.LOAD_BALANCE_TYPE+":1"})
-public interface StudentService {
+public class CallDuration {
 
+    final CallHandler callHandler;
+    final long duration;
 
-    TeacherInfo getTeacher(int studentId);
-
+    public CallDuration(CallHandler callHandler, long duration) {
+        this.callHandler = callHandler;
+        this.duration = duration;
+    }
 }

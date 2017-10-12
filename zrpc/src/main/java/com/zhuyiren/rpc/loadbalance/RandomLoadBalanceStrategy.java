@@ -66,4 +66,9 @@ public class RandomLoadBalanceStrategy implements LoadBalanceStrategy {
         List<SocketAddress> temp = serviceManager.getServiceProviderAddress(serviceName);
         addresses = new CopyOnWriteArrayList<>(temp);
     }
+
+    @Override
+    public void update(Object object) {
+        return;
+    }
 }

@@ -18,14 +18,11 @@ package com.github.zhuyiren.demo.programmatic;
 
 import com.github.zhuyiren.demo.model.TeacherInfo;
 import com.github.zhuyiren.demo.service.StudentService;
-import com.github.zhuyiren.demo.service.impl.StudentServiceImpl;
 import com.zhuyiren.rpc.common.DefaultClient;
 import com.zhuyiren.rpc.engine.ProtostuffEngine;
-import com.zhuyiren.rpc.handler.ProtostuffRequestHandlerAdapter;
 import com.zhuyiren.rpc.loadbalance.RandomLoadBalanceStrategy;
 import com.zhuyiren.rpc.loadbalance.RoundRobinLoadBalanceStrategy;
 import com.zhuyiren.rpc.loadbalance.WeightedRoundRobinLoadBalanceStrategy;
-import io.protostuff.ProtostuffIOUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

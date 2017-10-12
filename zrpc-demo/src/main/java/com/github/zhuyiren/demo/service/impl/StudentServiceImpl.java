@@ -16,10 +16,8 @@
 
 package com.github.zhuyiren.demo.service.impl;
 
-import com.github.zhuyiren.demo.model.StudentInfo;
 import com.github.zhuyiren.demo.model.TeacherInfo;
 import com.github.zhuyiren.demo.service.StudentService;
-import com.zhuyiren.rpc.loadbalance.RandomLoadBalanceStrategy;
 import com.zhuyiren.rpc.loadbalance.WeightedRoundRobinLoadBalanceStrategy;
 import com.zhuyiren.rpc.spring.ZRpcProvider;
 
