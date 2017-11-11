@@ -56,6 +56,19 @@ public class AverageCallTimeStrategy implements LoadBalanceStrategy<CallDuration
         public int compareTo(CallTimeStatistics o) {
             return (int) (this.average - o.average);
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof CallTimeStatistics)) return false;
+            CallTimeStatistics that = (CallTimeStatistics) o;
+            return callHandler.equals(that.callHandler);
+        }
+
+        @Override
+        public int hashCode() {
+            return callHandler.hashCode();
+        }
     }
 
     public AverageCallTimeStrategy(ServiceManager serviceMgr, CallHandlerManager callHandlerManager) {

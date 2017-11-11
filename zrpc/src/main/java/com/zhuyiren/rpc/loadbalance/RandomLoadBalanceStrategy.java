@@ -51,10 +51,11 @@ public class RandomLoadBalanceStrategy implements LoadBalanceStrategy {
     @Override
     public CallHandler doSelect() {
 
-        int length = addresses.size();
-        if (length == 0) {
+
+        if (addresses.isEmpty()) {
             return null;
         }
+        int length = addresses.size();
         ThreadLocalRandom random = ThreadLocalRandom.current();
         SocketAddress targetAddress = addresses.get(random.nextInt(length));
         return callHandlerManager.getCallHandler(targetAddress);

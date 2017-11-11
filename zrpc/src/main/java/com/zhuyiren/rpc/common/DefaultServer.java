@@ -157,7 +157,7 @@ public class DefaultServer implements Server {
     }
 
     @Override
-    public boolean start(SocketAddress address) throws IllegalArgumentException {
+    public boolean start(SocketAddress address){
         if (!(address instanceof InetSocketAddress)) {
             throw new IllegalArgumentException("监听地址无效");
         }

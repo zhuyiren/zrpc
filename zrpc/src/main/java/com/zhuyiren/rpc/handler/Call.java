@@ -33,7 +33,6 @@ public class Call {
     private volatile boolean done;
     private RpcException exception;
     private Thread thread;
-    private long timeout;
 
 
     public Call(Packet request) {

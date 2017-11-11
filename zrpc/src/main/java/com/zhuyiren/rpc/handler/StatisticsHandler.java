@@ -61,7 +61,14 @@ public class StatisticsHandler extends ChannelOutboundHandlerAdapter implements 
                 long currentCount = count.sum();
                 long currentTime = System.currentTimeMillis();
                 long currentReadCount=readCount.sum();
-                LOGGER.info("Statistics:" + (currentCount - preCount) * 1000 / (currentTime - preTime) +"-----"+(currentReadCount - preReadCount) * 1000 / (currentTime - preTime)+ "   Clients:" + channels.sum() + "   sum:" + currentCount+"---sum:"+readCount.sum());
+                long durationTime = currentTime - preTime;
+                StringBuilder sb=new StringBuilder();
+                sb.append("Statistics:").append((currentCount - preCount) * 1000 / durationTime)
+                        .append("-----").append((currentReadCount - preReadCount) * 1000 / durationTime)
+                        .append("   Clients:").append(channels.sum())
+                        .append("   sum:").append(currentCount)
+                        .append("---sum:").append(currentReadCount);
+                LOGGER.info(sb.toString());
                 preCount = currentCount;
                 preTime = currentTime;
                 preReadCount=currentReadCount;

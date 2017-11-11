@@ -322,8 +322,7 @@ public final class ProtostuffIdStrategy extends IdStrategy
     protected void writeCollectionIdTo(Output output, int fieldNumber,
                                        Class<?> clazz) throws IOException
     {
-        final CollectionSchema.MessageFactory factory = collectionMapping
-                .get(clazz);
+        final CollectionSchema.MessageFactory factory = collectionMapping.get(clazz.getName());
         if (factory == null && clazz.getName().startsWith("java.util"))
         {
             // jdk collection

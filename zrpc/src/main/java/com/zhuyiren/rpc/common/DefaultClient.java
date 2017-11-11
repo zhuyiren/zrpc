@@ -41,9 +41,7 @@ import java.lang.reflect.Proxy;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -58,7 +56,7 @@ public class DefaultClient implements Client, ServiceManager, CallHandlerManager
 
     private static final int DEFAULT_IO_THREAD_SIZE = Runtime.getRuntime().availableProcessors()*2;
 
-    private final List<Engine> engines;
+    private final Set<Engine> engines;
     private final Map<SocketAddress, CallHandler> callerMap;
     private final Map<String, ServiceInformation> serviceInfoMaps;
     private final Map<String, Invoker> invokerMap;
@@ -96,7 +94,7 @@ public class DefaultClient implements Client, ServiceManager, CallHandlerManager
                 }
                 List<SocketAddress> originalAddresses = originalServiceInfo.getAddresses();
                 List<ProviderProperty> providerProperties = extractProviderAddress(serviceName);
-                List<SocketAddress> newAddresses = providerProperties.stream().map(key -> key.getAddress()).collect(Collectors.toList());
+                List<SocketAddress> newAddresses = providerProperties.stream().map(ProviderProperty::getAddress).collect(Collectors.toList());
 
                 List<SocketAddress> removeAddresses = new ArrayList<>(originalAddresses);
                 List<SocketAddress> addAddresses = new ArrayList<>(newAddresses);
@@ -181,7 +179,7 @@ public class DefaultClient implements Client, ServiceManager, CallHandlerManager
     }
 
     public DefaultClient(String zkConnectUrl, String zkNamespace, int ioThreadSize, boolean useZip) {
-        engines = new ArrayList<>();
+        engines = new HashSet<>();
         callerMap = new ConcurrentHashMap<>();
         serviceInfoMaps = new ConcurrentHashMap<>();
         invokerMap = new ConcurrentHashMap<>();
@@ -208,7 +206,7 @@ public class DefaultClient implements Client, ServiceManager, CallHandlerManager
     public synchronized <T> T exportService(Class<? extends Engine> engineType, Class<T> service, String serviceName, List<ProviderProperty> providers) throws Exception {
 
         if (providers != null && providers.size() > 0) {
-            List<SocketAddress> collectAddresses = providers.stream().map(key -> key.getAddress()).collect(Collectors.toList());
+            List<SocketAddress> collectAddresses = providers.stream().map(ProviderProperty::getAddress).collect(Collectors.toList());
             CommonUtils.checkNoAnyHost(collectAddresses);
         }
 
@@ -320,11 +318,10 @@ public class DefaultClient implements Client, ServiceManager, CallHandlerManager
     }
 
     @Override
-    public CallHandler removeCaller(CallHandler callHandler) {
+    public void removeCaller(CallHandler callHandler) {
         SocketAddress remoteAddress = callHandler.getRemoteAddress();
         callerMap.remove(remoteAddress);
         callHandler.shutdown();
-        return callHandler;
     }
 
     @Override

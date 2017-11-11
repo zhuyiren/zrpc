@@ -32,7 +32,7 @@ public interface Server {
 
     boolean register(String serviceName, Object handler);
 
-    boolean start(SocketAddress address) throws IllegalArgumentException;
+    boolean start(SocketAddress address);
 
     boolean shutdown();
 

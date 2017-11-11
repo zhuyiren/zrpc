@@ -56,10 +56,11 @@ public class RoundRobinLoadBalanceStrategy implements LoadBalanceStrategy {
 
     @Override
     public CallHandler doSelect() {
-        int length = addresses.size();
-        if(length==0){
+
+        if(addresses.isEmpty()){
             return null;
         }
+        int length = addresses.size();
         return callHandlerMgr.getCallHandler(addresses.get((int) (currentIndex++ % length)));
     }
 

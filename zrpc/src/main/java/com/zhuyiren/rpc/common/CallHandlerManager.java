@@ -28,7 +28,7 @@ public interface CallHandlerManager {
 
     CallHandler createCaller(SocketAddress address) throws Exception;
 
-    CallHandler removeCaller(CallHandler callHandler);
+    void removeCaller(CallHandler callHandler);
 
     CallHandler getCallHandler(SocketAddress address);
 }
